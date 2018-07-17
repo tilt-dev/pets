@@ -6,4 +6,5 @@ jobs:
     working_directory: /go/src/github.com/windmilleng/pets
     steps:
       - checkout
+      - run: make lint
       - run: make test
