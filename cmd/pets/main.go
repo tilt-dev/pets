@@ -4,7 +4,7 @@ import (
   "fmt"
   "os"
 
-  "github.com/windmilleng/pets"
+  "github.com/windmilleng/pets/cmd/"
 )
 
 func main() {
