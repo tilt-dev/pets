@@ -29,10 +29,6 @@
   name = "github.com/spf13/cobra"
   version = "0.0.3"
 
-[[constraint]]
-  branch = "master"
-  name = "github.com/windmilleng/pets"
-
 [prune]
   go-tests = true
   unused-packages = true
