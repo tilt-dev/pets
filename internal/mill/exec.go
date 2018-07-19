@@ -18,7 +18,7 @@ func ExecFile(file string, stdout io.Writer) error {
 	return err
 }
 
-func getFilePath() string {
+func GetFilePath() string {
 	const Petsfile = "Petsfile"
 	cwd, _ := os.Getwd()
 

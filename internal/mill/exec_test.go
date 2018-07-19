@@ -12,7 +12,7 @@ import (
 func TestExecFile(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	dir, _ := ioutil.TempDir("", t.Name())
-	file := filepath.Join(dir, "Millfile")
+	file := filepath.Join(dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`print("hello")`), os.FileMode(0777))
 	ExecFile(file, stdout)
 	defer os.RemoveAll(dir)
@@ -26,7 +26,7 @@ func TestExecFile(t *testing.T) {
 func TestExecFileFail(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	dir, _ := ioutil.TempDir("", t.Name())
-	file := filepath.Join(dir, "Millfile")
+	file := filepath.Join(dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`print(hello)`), os.FileMode(0777))
 	defer os.RemoveAll(dir)
 
