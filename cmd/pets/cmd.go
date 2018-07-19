@@ -16,13 +16,13 @@ func init() {
 }
 
 var RootCmd = &cobra.Command{
-	Use:   "hello",
-	Short: "Hugo is a very fast static site generator",
-	Long: `A Fast and Flexible Static Site Generator built with
-                love by spf13 and friends in Go.
-                Complete documentation is available at http://hugo.spf13.com`,
+	Use:   "pets [arguments]",
+	Short: "PETS makes it easy to manage lots of servers running on your machine that you want to keep a close eye on for local development.",
+	Long: `A PETS file is like a Makefile for running servers and connecting them 
+			to other servers. With PETS, we can switch back and forth quickly 
+			between servers running locally and servers running in the cloud.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello world :)")
+		fmt.Println("Hello :)")
 	},
 }
 
