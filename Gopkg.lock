@@ -2,6 +2,17 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/google/skylark"
+  packages = [
+    ".",
+    "internal/compile",
+    "resolve",
+    "syntax"
+  ]
+  revision = "878b17a75d1975b64e9242cce2178ea1f599b871"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -19,15 +30,9 @@
   revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
   version = "v1.0.1"
 
-[[projects]]
-  branch = "master"
-  name = "github.com/windmilleng/pets"
-  packages = ["."]
-  revision = "ac4f4cac8ef31c4b1bebb2b7b274a56e32c90823"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c85102117f603bf98549571dc08aaca83c54a851d86e04a4063a8402cf176819"
+  inputs-digest = "9e03efd7ab4b7fad4812bbb1b8fd5efca17ca4ef24d98be10327fe2e762e34d9"
   solver-name = "gps-cdcl"
   solver-version = 1
