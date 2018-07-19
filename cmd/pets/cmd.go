@@ -21,7 +21,7 @@ var RootCmd = &cobra.Command{
 	to other servers. With PETS, we can switch back and forth quickly
 	between servers running locally and servers running in the cloud.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("You run pets!")
+		fmt.Println("You ran pets!")
 	},
 }
 
