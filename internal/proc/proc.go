@@ -1,7 +1,9 @@
 package proc
 
 import (
+	"os"
 	"os/exec"
+	"syscall"
 	"time"
 )
 
@@ -20,4 +22,16 @@ type PetsProc struct {
 type PetsCommand struct {
 	Proc PetsProc
 	Cmd  *exec.Cmd
+}
+
+// Checks if a process is still alive.
+func isAlive(pid int) bool {
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+
+	// 0 is a POSIX trick to ask the OS if it knows about the process
+	err = process.Signal(syscall.Signal(0))
+	return err == nil
 }
