@@ -1,8 +1,8 @@
 package pets
 
 import (
-	"bytes"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/windmilleng/pets/internal/mill"
@@ -12,11 +12,10 @@ var DryRunCmd = &cobra.Command{
 	Use: "dry-run",
 	Run: func(cmd *cobra.Command, args []string) {
 		file := mill.GetFilePath()
-		stdout := &bytes.Buffer{}
 
-		mill.ExecFile(file, stdout)
-
-		out := stdout.String()
-		fmt.Printf("Petsfile says: %s", out)
+		err := mill.ExecFile(file, os.Stdout)
+		if err != nil {
+			fmt.Println(err)
+		}
 	},
 }
