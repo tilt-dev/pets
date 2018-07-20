@@ -1,7 +1,6 @@
 package pets
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 
