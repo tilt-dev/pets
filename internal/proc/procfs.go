@@ -25,10 +25,15 @@ func NewProcFS() (ProcFS, error) {
 		return ProcFS{}, fmt.Errorf("NewProcFS: %v", err)
 	}
 
-	return ProcFS{
+	fs := ProcFS{
 		wmDir: wmDir,
 		mu:    &sync.Mutex{},
-	}, nil
+	}
+	err = fs.RemoveDeadProcs()
+	if err != nil {
+		return ProcFS{}, fmt.Errorf("NewProcFS: %v", err)
+	}
+	return fs, nil
 }
 
 // Add a proc to the JSON file
@@ -49,7 +54,22 @@ func (f ProcFS) AddProc(proc PetsProc) error {
 func (f ProcFS) RemoveProc(proc PetsProc) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	return f.filterProcs(func(p PetsProc) bool {
+		return proc.Pid == p.Pid
+	})
+}
 
+// Remove all dead proc from the JSON file
+func (f ProcFS) RemoveDeadProcs() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.filterProcs(func(p PetsProc) bool {
+		return !isAlive(p.Pid)
+	})
+}
+
+// Remove a proc from the JSON file if it matches the filter.
+func (f ProcFS) filterProcs(filter func(PetsProc) bool) error {
 	procs, err := f.procsFromFS()
 	if err != nil {
 		return err
@@ -57,11 +77,14 @@ func (f ProcFS) RemoveProc(proc PetsProc) error {
 
 	newProcs := []PetsProc{}
 	for _, p := range procs {
-		if p.Pid != proc.Pid {
-			newProcs = append(newProcs, proc)
+		if !filter(p) {
+			newProcs = append(newProcs, p)
 		}
 	}
 
+	if len(procs) == len(newProcs) {
+		return nil
+	}
 	return f.procsToFS(newProcs)
 }
 
