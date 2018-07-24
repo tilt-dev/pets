@@ -14,7 +14,7 @@ var dryRun bool
 // }
 
 func init() {
-	RootCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "just print recommended commands, don't run them")
+	RootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "just print recommended commands, don't run them")
 }
 
 var RootCmd = &cobra.Command{
