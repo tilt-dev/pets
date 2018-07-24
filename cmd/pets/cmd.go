@@ -2,16 +2,19 @@ package pets
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
+
+var dryRun bool
 
 // func main() {
 // 	Execute()
 // }
 
 func init() {
-	RootCmd.AddCommand(DryRunCmd)
+	RootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "just print recommended commands, don't run them")
 }
 
 var RootCmd = &cobra.Command{
@@ -20,9 +23,15 @@ var RootCmd = &cobra.Command{
 	Long: `A PETS file is like a Makefile for running servers and connecting them 
 	to other servers. With PETS, we can switch back and forth quickly
 	between servers running locally and servers running in the cloud.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("You ran pets!")
-	},
+	Run: pets,
+}
+
+func pets(cmd *cobra.Command, args []string) {
+	if dryRun {
+		fmt.Fprintln(os.Stderr, "pets dry-run")
+	} else {
+		fmt.Fprintln(os.Stderr, "You ran pets!")
+	}
 }
 
 // func Execute() {
