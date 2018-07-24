@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestExecFile(t *testing.T) {
+func TestPrint(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	dir, _ := ioutil.TempDir("", t.Name())
 	file := filepath.Join(dir, "Petsfile")
@@ -23,7 +23,7 @@ func TestExecFile(t *testing.T) {
 	}
 }
 
-func TestExecFileFail(t *testing.T) {
+func TestPrintFail(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	dir, _ := ioutil.TempDir("", t.Name())
 	file := filepath.Join(dir, "Petsfile")
