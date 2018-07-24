@@ -15,13 +15,9 @@ func TestProcFS(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs, err := NewProcFS()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	procfs := f.newProcFS()
 	proc := PetsProc{Pid: 12345}
-	err = procfs.AddProc(proc)
+	err := procfs.AddProc(proc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,11 +37,7 @@ func TestProcFSRemoveDead(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs, err := NewProcFS()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	procfs := f.newProcFS()
 	cmd1 := exec.Command("echo", "1")
 	cmd1.Start()
 
@@ -63,7 +55,7 @@ func TestProcFSRemoveDead(t *testing.T) {
 `, cmd1.Process.Pid, cmd2.Process.Pid)
 	f.assertProcFile(expected)
 
-	err = procfs.RemoveDeadProcs()
+	err := procfs.RemoveDeadProcs()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,6 +85,14 @@ func newProcFixture(t *testing.T) *procFixture {
 func (f *procFixture) tearDown() {
 	os.RemoveAll(f.dir)
 	os.Setenv("HOME", f.oldHome)
+}
+
+func (f *procFixture) newProcFS() ProcFS {
+	procfs, err := NewProcFS()
+	if err != nil {
+		f.t.Fatal(err)
+	}
+	return procfs
 }
 
 func (f *procFixture) procFile() string {
