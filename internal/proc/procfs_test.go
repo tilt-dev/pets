@@ -33,6 +33,28 @@ func TestProcFS(t *testing.T) {
 	f.assertProcFile("")
 }
 
+func TestProcFSHost(t *testing.T) {
+	f := newProcFixture(t)
+	defer f.tearDown()
+
+	procfs, err := NewProcFS()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	proc := PetsProc{Pid: 12345}
+	err = procfs.AddProc(proc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	procfs.ModifyProc(proc.WithExposedHost("localhost", 8080))
+
+	expected := `{"Pid":12345,"StartTime":"0001-01-01T00:00:00Z","Hostname":"localhost","Port":8080}
+`
+	f.assertProcFile(expected)
+}
+
 func TestProcFSRemoveDead(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()

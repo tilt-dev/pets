@@ -59,6 +59,19 @@ func (f ProcFS) RemoveProc(proc PetsProc) error {
 	})
 }
 
+// Replace a proc in the JSON file matching the given proc's PID
+func (f ProcFS) ModifyProc(proc PetsProc) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return f.mapProcs(func(p PetsProc) PetsProc {
+		if proc.Pid == p.Pid {
+			return proc
+		}
+		return p
+	})
+}
+
 // Remove all dead proc from the JSON file
 func (f ProcFS) RemoveDeadProcs() error {
 	f.mu.Lock()
@@ -70,6 +83,17 @@ func (f ProcFS) RemoveDeadProcs() error {
 
 // Remove a proc from the JSON file if it matches the filter.
 func (f ProcFS) filterProcs(filter func(PetsProc) bool) error {
+	return f.mapProcs(func(p PetsProc) PetsProc {
+		if filter(p) {
+			// Remove the process
+			return PetsProc{}
+		}
+		return p
+	})
+}
+
+// Map a proc from the JSON file to a new proc. If the new proc has Pid 0, remove it.
+func (f ProcFS) mapProcs(mapFn func(PetsProc) PetsProc) error {
 	procs, err := f.procsFromFS()
 	if err != nil {
 		return err
@@ -77,14 +101,12 @@ func (f ProcFS) filterProcs(filter func(PetsProc) bool) error {
 
 	newProcs := []PetsProc{}
 	for _, p := range procs {
-		if !filter(p) {
-			newProcs = append(newProcs, p)
+		newP := mapFn(p)
+		if newP.Pid != 0 {
+			newProcs = append(newProcs, newP)
 		}
 	}
 
-	if len(procs) == len(newProcs) {
-		return nil
-	}
 	return f.procsToFS(newProcs)
 }
 
