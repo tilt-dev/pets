@@ -10,19 +10,28 @@ import (
 	"github.com/windmilleng/pets/internal/proc"
 )
 
+type Petsitter struct {
+	Stdout io.Writer
+	Stderr io.Writer
+}
+
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
-func ExecFile(file string, stdout io.Writer) error {
+func (p *Petsitter) ExecFile(file string) error {
 	thread := &skylark.Thread{
-		Print: func(_ *skylark.Thread, msg string) { fmt.Fprintln(stdout, msg) },
+		Print: func(_ *skylark.Thread, msg string) { fmt.Fprintln(p.Stdout, msg) },
 	}
-	predeclared := skylark.StringDict{
-		"run": skylark.NewBuiltin("run", run),
-	}
-	_, err := skylark.ExecFile(thread, file, nil, predeclared)
+
+	_, err := skylark.ExecFile(thread, file, nil, p.builtins())
 	return err
 }
 
-func run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
+func (p *Petsitter) builtins() skylark.StringDict {
+	return skylark.StringDict{
+		"run": skylark.NewBuiltin("run", p.run),
+	}
+}
+
+func (p *Petsitter) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
 	var cmdV skylark.Value
 
 	if err := skylark.UnpackArgs("cmdV", args, kwargs,
@@ -37,7 +46,7 @@ func run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []sk
 	}
 
 	cwd, _ := os.Getwd()
-	if err := proc.Run(cmdArgs, cwd); err != nil {
+	if err := proc.RunWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
 		return nil, err
 	}
 
