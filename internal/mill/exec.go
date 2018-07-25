@@ -13,6 +13,7 @@ import (
 type Petsitter struct {
 	Stdout io.Writer
 	Stderr io.Writer
+	Runner proc.Runner
 }
 
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
@@ -46,7 +47,7 @@ func (p *Petsitter) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tup
 	}
 
 	cwd, _ := os.Getwd()
-	if err := proc.RunWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
+	if err := p.Runner.RunWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
 		return nil, err
 	}
 

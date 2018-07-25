@@ -7,16 +7,16 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/windmilleng/pets/internal/proc"
 )
 
 func TestPrint(t *testing.T) {
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
 	dir, _ := ioutil.TempDir("", t.Name())
 	file := filepath.Join(dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`print("hello")`), os.FileMode(0777))
 
-	petsitter := &Petsitter{Stdout: stdout, Stderr: stderr}
+	petsitter, stdout := newTestPetsitter(t)
 	petsitter.ExecFile(file)
 	defer os.RemoveAll(dir)
 
@@ -27,14 +27,12 @@ func TestPrint(t *testing.T) {
 }
 
 func TestPrintFail(t *testing.T) {
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
 	dir, _ := ioutil.TempDir("", t.Name())
 	file := filepath.Join(dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`print(hello)`), os.FileMode(0777))
 	defer os.RemoveAll(dir)
 
-	petsitter := &Petsitter{Stdout: stdout, Stderr: stderr}
+	petsitter, stdout := newTestPetsitter(t)
 	err := petsitter.ExecFile(file)
 	out := stdout.String()
 	if !(out == "" && strings.Contains(err.Error(), "undefined: hello")) {
@@ -43,13 +41,11 @@ func TestPrintFail(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
 	dir, _ := ioutil.TempDir("", t.Name())
 	file := filepath.Join(dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`run("echo meow")`), os.FileMode(0777))
 
-	petsitter := &Petsitter{Stdout: stdout, Stderr: stderr}
+	petsitter, stdout := newTestPetsitter(t)
 	petsitter.ExecFile(file)
 	defer os.RemoveAll(dir)
 
@@ -57,4 +53,19 @@ func TestRun(t *testing.T) {
 	if out != "meow\n" {
 		t.Errorf("Expected 'meow'. Actual: %s", out)
 	}
+}
+
+func newTestPetsitter(t *testing.T) (*Petsitter, *bytes.Buffer) {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	procfs, err := proc.NewProcFS()
+	if err != nil {
+		t.Fatal(err)
+	}
+	runner := proc.NewRunner(procfs)
+	return &Petsitter{
+		Stdout: stdout,
+		Stderr: stderr,
+		Runner: runner,
+	}, stdout
 }
