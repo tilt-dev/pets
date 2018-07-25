@@ -38,12 +38,21 @@
   revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
   version = "v1.0.1"
 
+[[projects]]
+  branch = "master"
+  digest = "1:65a64b11285bf3d99945a76fd15e6841724ece37f927a92f117caa6a40502688"
+  name = "github.com/windmilleng/wmclient"
+  packages = ["pkg/dirs"]
+  pruneopts = "UT"
+  revision = "45c5f1c151536951c55106d1958cca500385ed1d"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/google/skylark",
     "github.com/spf13/cobra",
+    "github.com/windmilleng/wmclient/pkg/dirs",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
