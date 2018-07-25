@@ -29,7 +29,7 @@ func (p *Petsitter) ExecFile(file string) error {
 func (p *Petsitter) builtins() skylark.StringDict {
 	return skylark.StringDict{
 		"run":   skylark.NewBuiltin("run", p.run),
-		"start": skylark.NewBuiltin("run", p.start),
+		"start": skylark.NewBuiltin("start", p.start),
 	}
 }
 
@@ -74,7 +74,10 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 		return nil, err
 	}
 
-	return skylark.None, nil
+	pid := os.Getpid()
+	d := &skylark.Dict{"pid": pid}
+	return d, nil
+	// return skylark.None, err
 }
 
 func argToCmd(b *skylark.Builtin, argV skylark.Value) ([]string, error) {
