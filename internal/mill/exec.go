@@ -15,6 +15,7 @@ import (
 )
 
 const Petsfile = "Petsfile"
+const threadLocalSourceFile = "sourceFile"
 
 type Petsitter struct {
 	Stdout io.Writer
@@ -24,15 +25,25 @@ type Petsitter struct {
 
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
 func (p *Petsitter) ExecFile(file string) error {
+	absFile, err := filepath.Abs(file)
+	if err != nil {
+		return err
+	}
+
+	thread := p.newThread(absFile)
+	_, err = skylark.ExecFile(thread, file, nil, p.builtins())
+	return err
+}
+
+func (p *Petsitter) newThread(file string) *skylark.Thread {
 	thread := &skylark.Thread{
 		Print: func(_ *skylark.Thread, msg string) {
 			fmt.Fprintln(p.Stdout, msg)
 		},
 		Load: p.load,
 	}
-
-	_, err := skylark.ExecFile(thread, file, nil, p.builtins())
-	return err
+	thread.SetLocal(threadLocalSourceFile, file)
+	return thread
 }
 
 func (p *Petsitter) builtins() skylark.StringDict {
@@ -110,14 +121,59 @@ func (p *Petsitter) load(t *skylark.Thread, module string) (skylark.StringDict, 
 		if err != nil {
 			return nil, fmt.Errorf("load: %v", err)
 		}
-		dict := map[string]skylark.Value{}
-		dict["dir"] = skylark.String(dir)
-		return skylark.StringDict(dict), nil
+
+		return p.execPetsFileAt(dir, true)
 	case "":
-		return nil, fmt.Errorf("Loading files relative to %s not implemented", Petsfile)
+		dir := filepath.Join(filepath.Dir(t.Local(threadLocalSourceFile).(string)), module)
+		return p.execPetsFileAt(dir, false)
 	default:
-		return nil, fmt.Errorf("Unknown load() strategy: %s. Available load schemes: go", url.Scheme)
+		return nil, fmt.Errorf("Unknown load() strategy: %s. Available load schemes: go-get", url.Scheme)
 	}
+}
+
+func (p *Petsitter) execPetsFileAt(module string, isMissingOk bool) (skylark.StringDict, error) {
+	result := map[string]skylark.Value{}
+	result["dir"] = skylark.String(module)
+
+	info, err := os.Stat(module)
+	if err != nil {
+		if os.IsNotExist(err) && isMissingOk {
+			return skylark.StringDict(result), nil
+		}
+		return nil, err
+	}
+
+	// If the user tried to load a directory, check if that
+	// directory has a Petsfile
+	if info.Mode().IsDir() {
+		module = path.Join(module, Petsfile)
+
+		info, err = os.Stat(module)
+		if err != nil {
+			if os.IsNotExist(err) && isMissingOk {
+				return skylark.StringDict(result), nil
+			}
+			return nil, err
+		}
+	}
+
+	if !info.Mode().IsRegular() {
+		return nil, fmt.Errorf("File %q should be a plaintext Petsfile", module)
+	}
+
+	// The most exciting part of the function is finally here! We have an executable
+	// Petsfile, so run it and grab the globals.
+	thread := p.newThread(module)
+	globals, err := skylark.ExecFile(thread, module, nil, p.builtins())
+	if err != nil {
+		return nil, err
+	}
+
+	for key, val := range globals {
+		result[key] = val
+	}
+
+	return skylark.StringDict(result), nil
 }
 
 func argToCmd(b *skylark.Builtin, argV skylark.Value) ([]string, error) {
