@@ -28,7 +28,8 @@ func (p *Petsitter) ExecFile(file string) error {
 
 func (p *Petsitter) builtins() skylark.StringDict {
 	return skylark.StringDict{
-		"run": skylark.NewBuiltin("run", p.run),
+		"run":   skylark.NewBuiltin("run", p.run),
+		"start": skylark.NewBuiltin("run", p.start),
 	}
 }
 
@@ -48,6 +49,28 @@ func (p *Petsitter) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tup
 
 	cwd, _ := os.Getwd()
 	if err := p.Runner.RunWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
+		return nil, err
+	}
+
+	return skylark.None, nil
+}
+
+func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
+	var cmdV skylark.Value
+
+	if err := skylark.UnpackArgs("cmdV", args, kwargs,
+		"cmdV", &cmdV,
+	); err != nil {
+		return nil, err
+	}
+
+	cmdArgs, err := argToCmd(fn, cmdV)
+	if err != nil {
+		return nil, err
+	}
+
+	cwd, _ := os.Getwd()
+	if _, err := p.Runner.StartWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
 		return nil, err
 	}
 
