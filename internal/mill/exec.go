@@ -10,13 +10,13 @@ import (
 	"github.com/windmilleng/pets/internal/proc"
 )
 
-type Probe struct {
+type Petsitter struct {
 	Stdout io.Writer
 	Stderr io.Writer
 }
 
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
-func (p *Probe) ExecFile(file string) error {
+func (p *Petsitter) ExecFile(file string) error {
 	thread := &skylark.Thread{
 		Print: func(_ *skylark.Thread, msg string) { fmt.Fprintln(p.Stdout, msg) },
 	}
@@ -25,13 +25,13 @@ func (p *Probe) ExecFile(file string) error {
 	return err
 }
 
-func (p *Probe) builtins() skylark.StringDict {
+func (p *Petsitter) builtins() skylark.StringDict {
 	return skylark.StringDict{
 		"run": skylark.NewBuiltin("run", p.run),
 	}
 }
 
-func (p *Probe) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
+func (p *Petsitter) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
 	var cmdV skylark.Value
 
 	if err := skylark.UnpackArgs("cmdV", args, kwargs,

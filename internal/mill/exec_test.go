@@ -15,7 +15,7 @@ func TestPrint(t *testing.T) {
 	dir, _ := ioutil.TempDir("", t.Name())
 	file := filepath.Join(dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`print("hello")`), os.FileMode(0777))
-	(*Probe).ExecFile(&Probe{Stdout: stdout, Stderr: stderr}, file)
+	(*Petsitter).ExecFile(&Petsitter{Stdout: stdout, Stderr: stderr}, file)
 	defer os.RemoveAll(dir)
 
 	out := stdout.String()
@@ -32,7 +32,7 @@ func TestPrintFail(t *testing.T) {
 	ioutil.WriteFile(file, []byte(`print(hello)`), os.FileMode(0777))
 	defer os.RemoveAll(dir)
 
-	err := (*Probe).ExecFile(&Probe{Stdout: stdout, Stderr: stderr}, file)
+	err := (*Petsitter).ExecFile(&Petsitter{Stdout: stdout, Stderr: stderr}, file)
 	out := stdout.String()
 	if !(out == "" && strings.Contains(err.Error(), "undefined: hello")) {
 		t.Errorf("Expected 'hello'. Actual: %s. Err: %s", out, err)
@@ -45,7 +45,7 @@ func TestRun(t *testing.T) {
 	dir, _ := ioutil.TempDir("", t.Name())
 	file := filepath.Join(dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`run("echo meow")`), os.FileMode(0777))
-	(*Probe).ExecFile(&Probe{Stdout: stdout, Stderr: stderr}, file)
+	(*Petsitter).ExecFile(&Petsitter{Stdout: stdout, Stderr: stderr}, file)
 	defer os.RemoveAll(dir)
 
 	out := stdout.String()

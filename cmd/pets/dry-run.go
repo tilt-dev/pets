@@ -13,7 +13,7 @@ var DryRunCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		file := mill.GetFilePath()
 
-		err := (*mill.Probe).ExecFile(&mill.Probe{Stdout: os.Stdout, Stderr: os.Stderr}, file)
+		err := (*mill.Petsitter).ExecFile(&mill.Petsitter{Stdout: os.Stdout, Stderr: os.Stderr}, file)
 		if err != nil {
 			fmt.Println(err)
 		}
