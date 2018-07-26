@@ -120,6 +120,39 @@ func (p *Petsitter) load(t *skylark.Thread, module string) (skylark.StringDict, 
 	}
 }
 
+func service(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
+	// Are we starting a process (service?) or modifying one?
+	var process proc.PetsCommand
+	var petsproc proc.PetsProc
+
+	var cmdV skylark.Value
+
+	if err := skylark.UnpackArgs("cmdV", args, kwargs,
+		"cmdV", &cmdV,
+	); err != nil {
+		return nil, err
+	}
+
+	cmdArgs, err := argToCmd(fn, cmdV)
+	if err != nil {
+		return nil, err
+	}
+
+	port := process.Proc.Port
+	host := process.Proc.Hostname
+
+	serv := proc.PetsProc.WithExposedHost(petsproc, host, port) // don't know how to do err handling
+
+	d := &skylark.Dict{}
+	pt := skylark.String("port")
+	ht := skylark.String("host")
+	ptVal := skylark.MakeInt(port)
+	htName := skylark.String(host)
+	d.Set(pt, ptVal)
+	d.Set(ht, htName)
+	return d, nil
+}
+
 func argToCmd(b *skylark.Builtin, argV skylark.Value) ([]string, error) {
 	switch argV := argV.(type) {
 	case skylark.String:
