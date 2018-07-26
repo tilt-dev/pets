@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/windmilleng/pets/internal/proc"
+	"github.com/windmilleng/pets/internal/school"
 	"github.com/windmilleng/wmclient/pkg/dirs"
 )
 
@@ -130,10 +131,12 @@ def random_number():
 }
 
 type petFixture struct {
+	t         *testing.T
 	petsitter *Petsitter
 	stdout    *bytes.Buffer
 	stderr    *bytes.Buffer
 	dir       string
+	procfs    proc.ProcFS
 }
 
 func newPetFixture(t *testing.T) *petFixture {
@@ -146,15 +149,14 @@ func newPetFixture(t *testing.T) *petFixture {
 		t.Fatal(err)
 	}
 	runner := proc.NewRunner(procfs)
+	school := school.NewPetSchool(procfs)
 	return &petFixture{
-		petsitter: &Petsitter{
-			Stdout: stdout,
-			Stderr: stderr,
-			Runner: runner,
-		},
-		stdout: stdout,
-		stderr: stderr,
-		dir:    dir,
+		t:         t,
+		petsitter: NewPetsitter(stdout, stderr, runner, procfs, school),
+		stdout:    stdout,
+		stderr:    stderr,
+		dir:       dir,
+		procfs:    procfs,
 	}
 }
 
