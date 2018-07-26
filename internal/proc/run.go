@@ -29,7 +29,7 @@ func (r Runner) Run(args []string, cwd string) error {
 
 // Run a command, waiting until it exits, forwarding all stdout/stderr to the given streams.
 func (r Runner) RunWithIO(args []string, cwd string, stdout, stderr io.Writer) error {
-	pCmd, err := r.startWithIO(args, cwd, stdout, stderr)
+	pCmd, err := r.StartWithIO(args, cwd, stdout, stderr)
 	if err != nil {
 		return fmt.Errorf("Run: %v", err)
 	}
@@ -39,7 +39,7 @@ func (r Runner) RunWithIO(args []string, cwd string, stdout, stderr io.Writer) e
 }
 
 // Starts a command, waiting until it exits, forwarding all stdout/stderr to the given streams.
-func (r Runner) startWithIO(args []string, cwd string, stdout, stderr io.Writer) (PetsCommand, error) {
+func (r Runner) StartWithIO(args []string, cwd string, stdout, stderr io.Writer) (PetsCommand, error) {
 	if len(args) == 0 {
 		return PetsCommand{}, fmt.Errorf("Empty args: %v", args)
 	}

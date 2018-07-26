@@ -37,7 +37,7 @@ func TestStartAddsToProcFS(t *testing.T) {
 	cwd, _ := os.Getwd()
 
 	r := NewRunner(procfs)
-	petsCmd, err := r.startWithIO([]string{"sleep", "10"}, cwd, stdout, stderr)
+	petsCmd, err := r.StartWithIO([]string{"sleep", "10"}, cwd, stdout, stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

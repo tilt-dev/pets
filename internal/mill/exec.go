@@ -37,7 +37,8 @@ func (p *Petsitter) ExecFile(file string) error {
 
 func (p *Petsitter) builtins() skylark.StringDict {
 	return skylark.StringDict{
-		"run": skylark.NewBuiltin("run", p.run),
+		"run":   skylark.NewBuiltin("run", p.run),
+		"start": skylark.NewBuiltin("start", p.start),
 	}
 }
 
@@ -61,6 +62,34 @@ func (p *Petsitter) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tup
 	}
 
 	return skylark.None, nil
+}
+
+func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
+	var cmdV skylark.Value
+	var process proc.PetsCommand
+
+	if err := skylark.UnpackArgs("cmdV", args, kwargs,
+		"cmdV", &cmdV,
+	); err != nil {
+		return nil, err
+	}
+
+	cmdArgs, err := argToCmd(fn, cmdV)
+	if err != nil {
+		return nil, err
+	}
+
+	cwd, _ := os.Getwd()
+	if process, err = p.Runner.StartWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
+		return nil, err
+	}
+	pr := process.Proc.Pid
+
+	d := &skylark.Dict{}
+	pid := skylark.String("pid")
+	proc := skylark.MakeInt(pr)
+	d.Set(pid, proc)
+	return d, nil
 }
 
 func (p *Petsitter) load(t *skylark.Thread, module string) (skylark.StringDict, error) {
