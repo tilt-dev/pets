@@ -64,6 +64,11 @@ func UseWindmillDir() (*WindmillDir, error) {
 	return &WindmillDir{dir: dir}, nil
 }
 
+// Create a windmill dir at an arbitrary directory. Useful for testing.
+func NewWindmillDirAt(dir string) *WindmillDir {
+	return &WindmillDir{dir: dir}
+}
+
 type WindmillDir struct {
 	dir string
 }

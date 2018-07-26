@@ -40,11 +40,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:65a64b11285bf3d99945a76fd15e6841724ece37f927a92f117caa6a40502688"
+  digest = "1:95fe9a3d458a0e40c0cc4cdcecf21cc084c88713c269fb60b24b1d09fc81239c"
   name = "github.com/windmilleng/wmclient"
   packages = ["pkg/dirs"]
   pruneopts = "UT"
-  revision = "45c5f1c151536951c55106d1958cca500385ed1d"
+  revision = "31c1725257e1cbda5a40d73bdbb0e824bda27ff6"
 
 [solve-meta]
   analyzer-name = "dep"

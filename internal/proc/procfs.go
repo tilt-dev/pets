@@ -24,12 +24,15 @@ func NewProcFS() (ProcFS, error) {
 	if err != nil {
 		return ProcFS{}, fmt.Errorf("NewProcFS: %v", err)
 	}
+	return NewProcFSWithDir(wmDir)
+}
 
+func NewProcFSWithDir(wmDir *dirs.WindmillDir) (ProcFS, error) {
 	fs := ProcFS{
 		wmDir: wmDir,
 		mu:    &sync.Mutex{},
 	}
-	err = fs.RemoveDeadProcs()
+	err := fs.RemoveDeadProcs()
 	if err != nil {
 		return ProcFS{}, fmt.Errorf("NewProcFS: %v", err)
 	}
