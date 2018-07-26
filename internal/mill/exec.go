@@ -55,13 +55,9 @@ func (p *Petsitter) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tup
 	return skylark.None, nil
 }
 
-type Dict struct {
-	pid int
-}
-
 func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
 	var cmdV skylark.Value
-	process := os.Getpid()
+	var process proc.PetsCommand
 
 	if err := skylark.UnpackArgs("cmdV", args, kwargs,
 		"cmdV", &cmdV,
@@ -75,15 +71,16 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 	}
 
 	cwd, _ := os.Getwd()
-	if _, err := p.Runner.StartWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
+	if process, err = p.Runner.StartWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
 		return nil, err
 	}
+	pr := process.Proc.Pid
 
-	d := Dict{
-		pid: process,
-	}
-	return &d, nil
-	// return skylark.None, err
+	d := &skylark.Dict{}
+	pid := skylark.String("pid")
+	proc := skylark.MakeInt(pr)
+	d.Set(pid, proc)
+	return d, nil
 }
 
 func argToCmd(b *skylark.Builtin, argV skylark.Value) ([]string, error) {

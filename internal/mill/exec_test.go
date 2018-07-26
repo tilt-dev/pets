@@ -55,6 +55,21 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestStart(t *testing.T) {
+	dir, _ := ioutil.TempDir("", t.Name())
+	file := filepath.Join(dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`print(start("sleep 10"))`), os.FileMode(0777))
+
+	petsitter, stdout := newTestPetsitter(t)
+	petsitter.ExecFile(file)
+	defer os.RemoveAll(dir)
+
+	out := stdout.String()
+	if !strings.Contains(out, "pid") {
+		t.Errorf("Expected 'meow'. Actual: %s", out)
+	}
+}
+
 func newTestPetsitter(t *testing.T) (*Petsitter, *bytes.Buffer) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
