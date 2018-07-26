@@ -37,13 +37,9 @@ func TestProcFSHost(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs, err := NewProcFS()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	procfs := f.newProcFS()
 	proc := PetsProc{Pid: 12345}
-	err = procfs.AddProc(proc)
+	err := procfs.AddProc(proc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,29 +84,25 @@ func TestProcFSRemoveDead(t *testing.T) {
 }
 
 type procFixture struct {
-	t       *testing.T
-	oldHome string
-	dir     string
+	t   *testing.T
+	dir string
 }
 
 func newProcFixture(t *testing.T) *procFixture {
 	dir, _ := ioutil.TempDir("", t.Name())
-	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", dir)
 	return &procFixture{
-		t:       t,
-		oldHome: oldHome,
-		dir:     dir,
+		t:   t,
+		dir: dir,
 	}
 }
 
 func (f *procFixture) tearDown() {
 	os.RemoveAll(f.dir)
-	os.Setenv("HOME", f.oldHome)
 }
 
 func (f *procFixture) newProcFS() ProcFS {
-	procfs, err := NewProcFS()
+	wmDir := dirs.NewWindmillDirAt(f.dir)
+	procfs, err := NewProcFSWithDir(wmDir)
 	if err != nil {
 		f.t.Fatal(err)
 	}
@@ -118,8 +110,7 @@ func (f *procFixture) newProcFS() ProcFS {
 }
 
 func (f *procFixture) procFile() string {
-	wmdir, _ := dirs.GetWindmillDir()
-	return filepath.Join(wmdir, procPath)
+	return filepath.Join(f.dir, procPath)
 }
 
 func (f *procFixture) assertProcFile(expected string) {
