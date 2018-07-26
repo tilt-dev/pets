@@ -17,6 +17,22 @@ type PetsProc struct {
 
 	// When the process started
 	StartTime time.Time
+
+	// The hostname that the process is listening on (e.g., 'localhost')
+	Hostname string `json:",omitempty"`
+
+	// The port that the process is listening on (e.g., '8080')
+	Port int `json:",omitempty"`
+}
+
+// Creates a new PetsProc that we know is listening on the given host and port.
+//
+// Calling this method automatically creates a copy because it's a struct method
+// rather than a pointer method.
+func (p PetsProc) WithExposedHost(hostname string, port int) PetsProc {
+	p.Hostname = hostname
+	p.Port = port
+	return p
 }
 
 type PetsCommand struct {

@@ -70,6 +70,28 @@ func TestStart(t *testing.T) {
 	}
 }
 
+func TestLoadGoGet(t *testing.T) {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	petsitter := &Petsitter{Stdout: stdout, Stderr: stderr}
+	dir, _ := ioutil.TempDir("", t.Name())
+	file := filepath.Join(dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+load("go-get://github.com/windmilleng/blorg-frontend", blorg_fe_dir="dir")
+print(blorg_fe_dir)
+`), os.FileMode(0777))
+	err := petsitter.ExecFile(file)
+	defer os.RemoveAll(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "github.com/windmilleng/blorg-frontend") {
+		t.Errorf("Expected import 'blorg-frontend'. Actual: %s", out)
+	}
+}
+
 func newTestPetsitter(t *testing.T) (*Petsitter, *bytes.Buffer) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}

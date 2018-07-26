@@ -2,13 +2,19 @@ package mill
 
 import (
 	"fmt"
+	"go/build"
 	"io"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/google/skylark"
+	"github.com/windmilleng/pets/internal/loader"
 	"github.com/windmilleng/pets/internal/proc"
 )
+
+const Petsfile = "Petsfile"
 
 type Petsitter struct {
 	Stdout io.Writer
@@ -19,7 +25,10 @@ type Petsitter struct {
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
 func (p *Petsitter) ExecFile(file string) error {
 	thread := &skylark.Thread{
-		Print: func(_ *skylark.Thread, msg string) { fmt.Fprintln(p.Stdout, msg) },
+		Print: func(_ *skylark.Thread, msg string) {
+			fmt.Fprintln(p.Stdout, msg)
+		},
+		Load: p.load,
 	}
 
 	_, err := skylark.ExecFile(thread, file, nil, p.builtins())
@@ -83,6 +92,34 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 	return d, nil
 }
 
+func (p *Petsitter) load(t *skylark.Thread, module string) (skylark.StringDict, error) {
+	url, err := url.Parse(module)
+	if err != nil {
+		return nil, err
+	}
+
+	switch url.Scheme {
+	case "go-get":
+		importPath := path.Join(url.Host, url.Path)
+		if fmt.Sprintf("go-get://%s", importPath) != module {
+			return nil, fmt.Errorf("go-get URLs may not contain query or fragment info")
+		}
+
+		// TODO(nick): Use the dir returned by LoadGoRepo to run PetsFile recursively
+		dir, err := loader.LoadGoRepo(importPath, build.Default)
+		if err != nil {
+			return nil, fmt.Errorf("load: %v", err)
+		}
+		dict := map[string]skylark.Value{}
+		dict["dir"] = skylark.String(dir)
+		return skylark.StringDict(dict), nil
+	case "":
+		return nil, fmt.Errorf("Loading files relative to %s not implemented", Petsfile)
+	default:
+		return nil, fmt.Errorf("Unknown load() strategy: %s. Available load schemes: go", url.Scheme)
+	}
+}
+
 func argToCmd(b *skylark.Builtin, argV skylark.Value) ([]string, error) {
 	switch argV := argV.(type) {
 	case skylark.String:
@@ -93,7 +130,6 @@ func argToCmd(b *skylark.Builtin, argV skylark.Value) ([]string, error) {
 }
 
 func GetFilePath() string {
-	const Petsfile = "Petsfile"
 	cwd, _ := os.Getwd()
 
 	return filepath.Join(cwd, Petsfile)
