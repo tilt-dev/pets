@@ -15,7 +15,6 @@ import (
 )
 
 const Petsfile = "Petsfile"
-const threadLocalSourceFile = "sourceFile"
 
 type Petsitter struct {
 	Stdout io.Writer
@@ -42,7 +41,6 @@ func (p *Petsitter) newThread(file string) *skylark.Thread {
 		},
 		Load: p.load,
 	}
-	thread.SetLocal(threadLocalSourceFile, file)
 	return thread
 }
 
@@ -124,7 +122,7 @@ func (p *Petsitter) load(t *skylark.Thread, module string) (skylark.StringDict, 
 
 		return p.execPetsFileAt(dir, true)
 	case "":
-		dir := filepath.Join(filepath.Dir(t.Local(threadLocalSourceFile).(string)), module)
+		dir := filepath.Join(filepath.Dir(t.TopFrame().Position().Filename()), module)
 		return p.execPetsFileAt(dir, false)
 	default:
 		return nil, fmt.Errorf("Unknown load() strategy: %s. Available load schemes: go-get", url.Scheme)
