@@ -24,17 +24,12 @@ type Petsitter struct {
 
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
 func (p *Petsitter) ExecFile(file string) error {
-	absFile, err := filepath.Abs(file)
-	if err != nil {
-		return err
-	}
-
-	thread := p.newThread(absFile)
-	_, err = skylark.ExecFile(thread, file, nil, p.builtins())
+	thread := p.newThread()
+	_, err := skylark.ExecFile(thread, file, nil, p.builtins())
 	return err
 }
 
-func (p *Petsitter) newThread(file string) *skylark.Thread {
+func (p *Petsitter) newThread() *skylark.Thread {
 	thread := &skylark.Thread{
 		Print: func(_ *skylark.Thread, msg string) {
 			fmt.Fprintln(p.Stdout, msg)
@@ -120,16 +115,16 @@ func (p *Petsitter) load(t *skylark.Thread, module string) (skylark.StringDict, 
 			return nil, fmt.Errorf("load: %v", err)
 		}
 
-		return p.execPetsFileAt(dir, true)
+		return p.execPetsFileAt(t, dir, true)
 	case "":
 		dir := filepath.Join(filepath.Dir(t.TopFrame().Position().Filename()), module)
-		return p.execPetsFileAt(dir, false)
+		return p.execPetsFileAt(t, dir, false)
 	default:
 		return nil, fmt.Errorf("Unknown load() strategy: %s. Available load schemes: go-get", url.Scheme)
 	}
 }
 
-func (p *Petsitter) execPetsFileAt(module string, isMissingOk bool) (skylark.StringDict, error) {
+func (p *Petsitter) execPetsFileAt(t *skylark.Thread, module string, isMissingOk bool) (skylark.StringDict, error) {
 	result := map[string]skylark.Value{}
 	result["dir"] = skylark.String(module)
 
@@ -161,8 +156,7 @@ func (p *Petsitter) execPetsFileAt(module string, isMissingOk bool) (skylark.Str
 
 	// The most exciting part of the function is finally here! We have an executable
 	// Petsfile, so run it and grab the globals.
-	thread := p.newThread(module)
-	globals, err := skylark.ExecFile(thread, module, nil, p.builtins())
+	globals, err := skylark.ExecFile(t, module, nil, p.builtins())
 	if err != nil {
 		return nil, err
 	}
