@@ -120,37 +120,36 @@ func (p *Petsitter) load(t *skylark.Thread, module string) (skylark.StringDict, 
 	}
 }
 
+// Service(server, “localhost”, 8081)
 func service(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
 	// Are we starting a process (service?) or modifying one?
-	var process proc.PetsCommand
-	var petsproc proc.PetsProc
 
-	var cmdV skylark.Value
+	var server, localhost string
+	var port int
 
-	if err := skylark.UnpackArgs("cmdV", args, kwargs,
-		"cmdV", &cmdV,
-	); err != nil {
+	if err := skylark.UnpackArgs("service", args, kwargs, "server", &server, "localhost", &localhost, "port", &port); err != nil {
 		return nil, err
 	}
 
-	cmdArgs, err := argToCmd(fn, cmdV)
-	if err != nil {
-		return nil, err
-	}
+	// service ... uses some procfs function?
 
-	port := process.Proc.Port
-	host := process.Proc.Hostname
+	// svcArgs, err := argToCmd(fn, service)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	serv := proc.PetsProc.WithExposedHost(petsproc, host, port) // don't know how to do err handling
+	// port := process.Proc.Port
+	// host := process.Proc.Hostname
 
-	d := &skylark.Dict{}
-	pt := skylark.String("port")
-	ht := skylark.String("host")
-	ptVal := skylark.MakeInt(port)
-	htName := skylark.String(host)
-	d.Set(pt, ptVal)
-	d.Set(ht, htName)
-	return d, nil
+	// d := &skylark.Dict{}
+	// pt := skylark.String("port")
+	// ht := skylark.String("host")
+	// ptVal := skylark.MakeInt(port)
+	// htName := skylark.String(host)
+	// d.Set(pt, ptVal)
+	// d.Set(ht, htName)
+	// return d, nil
+	return skylark.None, nil
 }
 
 func argToCmd(b *skylark.Builtin, argV skylark.Value) ([]string, error) {
