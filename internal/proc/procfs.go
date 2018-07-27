@@ -44,7 +44,7 @@ func (f ProcFS) AddProc(proc PetsProc) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	procs, err := f.procsFromFS()
+	procs, err := f.ProcsFromFS()
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (f ProcFS) filterProcs(filter func(PetsProc) bool) error {
 
 // Map a proc from the JSON file to a new proc. If the new proc has Pid 0, remove it.
 func (f ProcFS) mapProcs(mapFn func(PetsProc) PetsProc) error {
-	procs, err := f.procsFromFS()
+	procs, err := f.ProcsFromFS()
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (f ProcFS) mapProcs(mapFn func(PetsProc) PetsProc) error {
 }
 
 // Read all the procs from the JSON file
-func (f ProcFS) procsFromFS() ([]PetsProc, error) {
+func (f ProcFS) ProcsFromFS() ([]PetsProc, error) {
 	contents, err := f.wmDir.ReadFile(procPath)
 	if err != nil {
 		if os.IsNotExist(err) {
