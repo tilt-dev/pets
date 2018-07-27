@@ -99,6 +99,36 @@ print(blorg_fe_dir)
 	}
 }
 
+func TestLoadRelative(t *testing.T) {
+	f := newPetFixture(t)
+	defer f.tearDown()
+
+	petsitter, stdout := f.petsitter, f.stdout
+
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+load("inner", "random_number")
+print(random_number())
+`), os.FileMode(0777))
+
+	innerFile := filepath.Join(f.dir, "inner", "Petsfile")
+	os.MkdirAll(filepath.Dir(innerFile), os.FileMode(0777))
+	ioutil.WriteFile(innerFile, []byte(`
+def random_number():
+  return 4
+`), os.FileMode(0777))
+
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := stdout.String()
+	if out != "4\n" {
+		t.Errorf("Expected print '4'. Actual: %s", out)
+	}
+}
+
 type petFixture struct {
 	petsitter *Petsitter
 	stdout    *bytes.Buffer
