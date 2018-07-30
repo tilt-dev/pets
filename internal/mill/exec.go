@@ -20,6 +20,7 @@ type Petsitter struct {
 	Stdout io.Writer
 	Stderr io.Writer
 	Runner proc.Runner
+	Procfs proc.ProcFS
 }
 
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
@@ -174,6 +175,8 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 	var server skylark.Dict
 	var host string
 	var port int
+	var pr proc.PetsProc
+	var pkey skylark.Int
 	var pid int
 
 	if err := skylark.UnpackArgs("service", args, kwargs, "server", &server, "host", &host, "port", &port); err != nil {
@@ -183,21 +186,31 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 	// get pid from server as go object - get process of pid from procfs list (all in go)
 	for _, serverItem := range server.Items() {
 		key := serverItem[0]
-		if pid, found, _ := server.Get(key); !found {
-			return skylark.None, nil
+		skylarkPid, found, err := server.Get(key)
+		if !found {
+			return nil, err
+		}
+		pkey, err = skylark.NumberToInt(skylarkPid)
+		pid64, _ := pkey.Int64()
+		pid = int(pid64)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	// from the pid, get the process. then use that to modify the process.
-	procs, err := proc.ProcFS.ProcsFromFS()
+	procs, err := p.Procfs.ProcsFromFS()
+	if err != nil {
+		return nil, err
+	}
 	for _, p := range procs {
 		// find when pid == proc
 		if p.Pid == pid {
-			pr := p.Pid
+			pr = p
 		}
 	}
 
-	pr.ModifyProc(proc.PetsProc.WithExposedHost(host, port))
+	p.Procfs.ModifyProc(pr.WithExposedHost(host, port))
 
 	return skylark.None, nil
 }
