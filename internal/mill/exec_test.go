@@ -13,14 +13,16 @@ import (
 )
 
 func TestPrint(t *testing.T) {
-	dir, _ := ioutil.TempDir("", t.Name())
-	file := filepath.Join(dir, "Petsfile")
-	ioutil.WriteFile(file, []byte(`print("hello")`), os.FileMode(0777))
-
 	f := newPetFixture(t)
+	defer f.tearDown()
+
 	petsitter, stdout := f.petsitter, f.stdout
-	petsitter.ExecFile(file)
-	defer os.RemoveAll(dir)
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`print("hello")`), os.FileMode(0777))
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	out := stdout.String()
 	if out != "hello\n" {
@@ -29,13 +31,13 @@ func TestPrint(t *testing.T) {
 }
 
 func TestPrintFail(t *testing.T) {
-	dir, _ := ioutil.TempDir("", t.Name())
-	file := filepath.Join(dir, "Petsfile")
-	ioutil.WriteFile(file, []byte(`print(hello)`), os.FileMode(0777))
-	defer os.RemoveAll(dir)
-
 	f := newPetFixture(t)
+	defer f.tearDown()
+
 	petsitter, stdout := f.petsitter, f.stdout
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`print(hello)`), os.FileMode(0777))
+
 	err := petsitter.ExecFile(file)
 	out := stdout.String()
 	if !(out == "" && strings.Contains(err.Error(), "undefined: hello")) {
@@ -44,14 +46,16 @@ func TestPrintFail(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	dir, _ := ioutil.TempDir("", t.Name())
-	file := filepath.Join(dir, "Petsfile")
-	ioutil.WriteFile(file, []byte(`run("echo meow")`), os.FileMode(0777))
-
 	f := newPetFixture(t)
+	defer f.tearDown()
+
 	petsitter, stdout := f.petsitter, f.stdout
-	petsitter.ExecFile(file)
-	defer os.RemoveAll(dir)
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`run("echo meow")`), os.FileMode(0777))
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	out := stdout.String()
 	if out != "meow\n" {
@@ -60,14 +64,13 @@ func TestRun(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	dir, _ := ioutil.TempDir("", t.Name())
-	file := filepath.Join(dir, "Petsfile")
-	ioutil.WriteFile(file, []byte(`print(start("sleep 10"))`), os.FileMode(0777))
-
 	f := newPetFixture(t)
+	defer f.tearDown()
+
 	petsitter, stdout := f.petsitter, f.stdout
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`print(start("sleep 10"))`), os.FileMode(0777))
 	petsitter.ExecFile(file)
-	defer os.RemoveAll(dir)
 
 	out := stdout.String()
 	if !strings.Contains(out, "pid") {
@@ -76,17 +79,16 @@ func TestStart(t *testing.T) {
 }
 
 func TestLoadGoGet(t *testing.T) {
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-	petsitter := &Petsitter{Stdout: stdout, Stderr: stderr}
-	dir, _ := ioutil.TempDir("", t.Name())
-	file := filepath.Join(dir, "Petsfile")
+	f := newPetFixture(t)
+	defer f.tearDown()
+
+	petsitter, stdout := f.petsitter, f.stdout
+	file := filepath.Join(f.dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`
 load("go-get://github.com/windmilleng/blorg-frontend", blorg_fe_dir="dir")
 print(blorg_fe_dir)
 `), os.FileMode(0777))
 	err := petsitter.ExecFile(file)
-	defer os.RemoveAll(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,6 +96,36 @@ print(blorg_fe_dir)
 	out := stdout.String()
 	if !strings.Contains(out, "github.com/windmilleng/blorg-frontend") {
 		t.Errorf("Expected import 'blorg-frontend'. Actual: %s", out)
+	}
+}
+
+func TestLoadRelative(t *testing.T) {
+	f := newPetFixture(t)
+	defer f.tearDown()
+
+	petsitter, stdout := f.petsitter, f.stdout
+
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+load("inner", "random_number")
+print(random_number())
+`), os.FileMode(0777))
+
+	innerFile := filepath.Join(f.dir, "inner", "Petsfile")
+	os.MkdirAll(filepath.Dir(innerFile), os.FileMode(0777))
+	ioutil.WriteFile(innerFile, []byte(`
+def random_number():
+  return 4
+`), os.FileMode(0777))
+
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := stdout.String()
+	if out != "4\n" {
+		t.Errorf("Expected print '4'. Actual: %s", out)
 	}
 }
 

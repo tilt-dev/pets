@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/windmilleng/pets/internal/service"
 	"github.com/windmilleng/wmclient/pkg/dirs"
 )
 
@@ -47,6 +48,24 @@ func TestProcFSHost(t *testing.T) {
 	procfs.ModifyProc(proc.WithExposedHost("localhost", 8080))
 
 	expected := `{"Pid":12345,"StartTime":"0001-01-01T00:00:00Z","Hostname":"localhost","Port":8080}
+`
+	f.assertProcFile(expected)
+}
+
+func TestProcFSKey(t *testing.T) {
+	f := newProcFixture(t)
+	defer f.tearDown()
+
+	procfs := f.newProcFS()
+	proc := PetsProc{Pid: 12345}
+	err := procfs.AddProc(proc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	procfs.ModifyProc(proc.WithServiceKey(service.NewKey("frontend", "local")))
+
+	expected := `{"Pid":12345,"StartTime":"0001-01-01T00:00:00Z","ServiceName":"frontend","ServiceTier":"local"}
 `
 	f.assertProcFile(expected)
 }
