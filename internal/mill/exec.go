@@ -174,6 +174,7 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 	var server skylark.Dict
 	var host string
 	var port int
+	var pid int
 
 	if err := skylark.UnpackArgs("service", args, kwargs, "server", &server, "host", &host, "port", &port); err != nil {
 		return nil, err
@@ -187,12 +188,16 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 		}
 	}
 
-	// procs, err := proc.ProcFS.ProcsFromFS()
-	// for _, p := range procs {
-	// 	fmt.Printf("%d\t%s\n", p.Pid, p.DisplayName)
-	// }
+	// from the pid, get the process. then use that to modify the process.
+	procs, err := proc.ProcFS.ProcsFromFS()
+	for _, p := range procs {
+		// find when pid == proc
+		if p.Pid == pid {
+			pr := p.Pid
+		}
+	}
 
-	pid.ModifyProc(proc.PetsProc.WithExposedHost(host, port))
+	pr.ModifyProc(proc.PetsProc.WithExposedHost(host, port))
 
 	return skylark.None, nil
 }
