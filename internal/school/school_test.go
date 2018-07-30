@@ -42,6 +42,16 @@ func TestOneServer(t *testing.T) {
 	if proc.Pid != 1 {
 		t.Errorf("Unexpected proc: %v", proc)
 	}
+
+	services, err := f.school.healthyServices()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, containsFE := services[key]
+	if len(services) != 1 || !containsFE {
+		t.Fatalf("Unexpected healthy services: %+v", services)
+	}
 }
 
 // Test a server topology with three services, blorg-frontend, blorg-backend, and blorgly-backend
@@ -170,6 +180,10 @@ func (f *schoolFixture) makeProvider(pid int) Provider {
 			Pid:      pid,
 			Hostname: "localhost",
 			Port:     1000 + pid,
+		}
+		err := f.procfs.AddProc(p)
+		if err != nil {
+			return proc.PetsProc{}, err
 		}
 		f.procs = append(f.procs, p)
 		return p, nil

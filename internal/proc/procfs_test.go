@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/windmilleng/pets/internal/service"
@@ -32,6 +33,23 @@ func TestProcFS(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.assertProcFile("")
+}
+
+func TestProcFSDoubleAdd(t *testing.T) {
+	f := newProcFixture(t)
+	defer f.tearDown()
+
+	procfs := f.newProcFS()
+	proc := PetsProc{Pid: 12345}
+	err := procfs.AddProc(proc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = procfs.AddProc(proc)
+	if err == nil || !strings.Contains(err.Error(), "already exists") {
+		t.Errorf("Expected 'already exists' error. Actual: %v", err)
+	}
 }
 
 func TestProcFSHost(t *testing.T) {

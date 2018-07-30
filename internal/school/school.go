@@ -65,10 +65,21 @@ func (s *PetSchool) AddProvider(key service.Key, provider Provider, deps []servi
 // In the future, this might include a user-specified health check.
 func (s *PetSchool) healthyServices() (map[service.Key]proc.PetsProc, error) {
 	result := make(map[service.Key]proc.PetsProc)
+	procs, err := s.procfs.ProcsFromFS()
+	if err != nil {
+		return nil, fmt.Errorf("school#healthServices: %v", err)
+	}
 
-	// TODO(nick): Get this info from ProcFS. This will be easier once 'pets list' is ready
+	for _, p := range procs {
+		isHealthyServiceProc := p.ServiceName != "" && p.ServiceTier != "" &&
+			p.Hostname != "" && p.Port != 0
+		if !isHealthyServiceProc {
+			continue
+		}
 
-	// TODO(nick): Who's responsible for writing service.Key and service.Tier to procfs?
+		key := service.NewKey(p.ServiceName, p.ServiceTier)
+		result[key] = p
+	}
 
 	return result, nil
 }
@@ -119,6 +130,12 @@ func (s *PetSchool) up(key service.Key, petsUp map[service.Key]proc.PetsProc) (p
 	if err != nil {
 		return proc.PetsProc{}, err
 	}
+
+	err = s.procfs.ModifyProc(result.WithServiceKey(key))
+	if err != nil {
+		return proc.PetsProc{}, err
+	}
+
 	petsUp[key] = result
 	return result, nil
 }
