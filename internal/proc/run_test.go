@@ -43,7 +43,7 @@ func TestStartAddsToProcFS(t *testing.T) {
 	}
 	defer petsCmd.Cmd.Process.Kill()
 
-	procs, err := procfs.procsFromFS()
+	procs, err := procfs.ProcsFromFS()
 	if err != nil {
 		t.Fatal(err)
 	}
