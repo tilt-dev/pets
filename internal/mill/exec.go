@@ -169,34 +169,31 @@ func (p *Petsitter) execPetsFileAt(t *skylark.Thread, module string, isMissingOk
 }
 
 // Service(server, “localhost”, 8081)
-func service(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
+func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
 	// Are we starting a process (service?) or modifying one?
-
-	var server, localhost string
+	var server skylark.Dict
+	var host string
 	var port int
 
-	if err := skylark.UnpackArgs("service", args, kwargs, "server", &server, "localhost", &localhost, "port", &port); err != nil {
+	if err := skylark.UnpackArgs("service", args, kwargs, "server", &server, "host", &host, "port", &port); err != nil {
 		return nil, err
 	}
 
-	// service ... uses some procfs function?
+	// get pid from server as go object - get process of pid from procfs list (all in go)
+	for _, serverItem := range server.Items() {
+		key := serverItem[0]
+		if pid, found, _ := server.Get(key); !found {
+			return skylark.None, nil
+		}
+	}
 
-	// svcArgs, err := argToCmd(fn, service)
-	// if err != nil {
-	// 	return nil, err
+	// procs, err := proc.ProcFS.ProcsFromFS()
+	// for _, p := range procs {
+	// 	fmt.Printf("%d\t%s\n", p.Pid, p.DisplayName)
 	// }
 
-	// port := process.Proc.Port
-	// host := process.Proc.Hostname
+	pid.ModifyProc(proc.PetsProc.WithExposedHost(host, port))
 
-	// d := &skylark.Dict{}
-	// pt := skylark.String("port")
-	// ht := skylark.String("host")
-	// ptVal := skylark.MakeInt(port)
-	// htName := skylark.String(host)
-	// d.Set(pt, ptVal)
-	// d.Set(ht, htName)
-	// return d, nil
 	return skylark.None, nil
 }
 
