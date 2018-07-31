@@ -31,7 +31,12 @@ var DownCmd = &cobra.Command{
 
 		for _, p := range procs {
 			// TODO: Decide what to do in edge cases, when killing pets doesn't work
-			err := syscall.Kill(p.Pid, syscall.SIGINT)
+
+			// Pets starts all processes with a process group. -p.Pid is a posix trick
+			// to kill all processes in the group. This is helpful for things like 'go run'
+			// that spawn subprocesses, so that the subprocesses get killed too.
+			pgid := -p.Pid
+			err := syscall.Kill(pgid, syscall.SIGINT)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
