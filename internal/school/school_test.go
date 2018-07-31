@@ -34,7 +34,7 @@ func TestOneServer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	proc, err := f.school.Up(key)
+	proc, err := f.school.UpByKey(key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestThreeServers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	proc, err := f.school.Up(key)
+	proc, err := f.school.UpByKey(key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,27 +85,9 @@ func TestServerDiamond(t *testing.T) {
 	defer f.tearDown()
 
 	key := localKey(blorgFrontend)
-	err := f.school.AddProvider(key, f.makeProvider(1), []service.Name{blorgBackend, blorglyBackend}, "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	f.setupDiamond()
 
-	err = f.school.AddProvider(localKey(blorgBackend), f.makeProvider(2), []service.Name{cockroach}, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = f.school.AddProvider(localKey(blorglyBackend), f.makeProvider(3), []service.Name{cockroach}, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = f.school.AddProvider(localKey(cockroach), f.makeProvider(4), nil, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	proc, err := f.school.Up(key)
+	proc, err := f.school.UpByKey(key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,6 +98,24 @@ func TestServerDiamond(t *testing.T) {
 
 	if len(f.procs) != 4 {
 		t.Errorf("Expected 4 procs. Actual: %v", f.procs)
+	}
+}
+
+func TestServerDiamondByTier(t *testing.T) {
+	f := newSchoolFixture(t)
+	defer f.tearDown()
+
+	f.setupDiamond()
+
+	procs, err := f.school.UpByTier("local")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(procs) != 4 {
+		t.Errorf("Expected 4 procs returned. Actual: %v", procs)
+	}
+	if len(f.procs) != 4 {
+		t.Errorf("Expected 4 procs in fixture. Actual: %v", f.procs)
 	}
 }
 
@@ -134,7 +134,7 @@ func TestMissingDependency(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.school.Up(key)
+	_, err = f.school.UpByKey(key)
 	if err == nil ||
 		!strings.Contains(err.Error(), "Service \"blorg-frontend\" depends on service \"blorg-backend\"") ||
 		!strings.Contains(err.Error(), "Service \"blorg-backend\" depends on service \"cockroach\"") ||
@@ -161,6 +161,29 @@ func newSchoolFixture(t *testing.T) *schoolFixture {
 		dir:    dir,
 		procfs: procfs,
 		school: school,
+	}
+}
+
+func (f *schoolFixture) setupDiamond() {
+	key := localKey(blorgFrontend)
+	err := f.school.AddProvider(key, f.makeProvider(1), []service.Name{blorgBackend, blorglyBackend}, "")
+	if err != nil {
+		f.t.Fatal(err)
+	}
+
+	err = f.school.AddProvider(localKey(blorgBackend), f.makeProvider(2), []service.Name{cockroach}, "")
+	if err != nil {
+		f.t.Fatal(err)
+	}
+
+	err = f.school.AddProvider(localKey(blorglyBackend), f.makeProvider(3), []service.Name{cockroach}, "")
+	if err != nil {
+		f.t.Fatal(err)
+	}
+
+	err = f.school.AddProvider(localKey(cockroach), f.makeProvider(4), nil, "")
+	if err != nil {
+		f.t.Fatal(err)
 	}
 }
 
