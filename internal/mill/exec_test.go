@@ -2,6 +2,7 @@ package mill
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -128,6 +129,38 @@ def random_number():
 	out := stdout.String()
 	if out != "4\n" {
 		t.Errorf("Expected print '4'. Actual: %s", out)
+	}
+}
+
+func TestLoadRelativeWorkingDirectory(t *testing.T) {
+	f := newPetFixture(t)
+	defer f.tearDown()
+
+	petsitter, stdout := f.petsitter, f.stdout
+
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+load("inner", "inner_pwd")
+run("pwd")
+inner_pwd()
+`), os.FileMode(0777))
+
+	innerFile := filepath.Join(f.dir, "inner", "Petsfile")
+	os.MkdirAll(filepath.Dir(innerFile), os.FileMode(0777))
+	ioutil.WriteFile(innerFile, []byte(`
+def inner_pwd():
+  run("pwd")
+`), os.FileMode(0777))
+
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := stdout.String()
+	expected := fmt.Sprintf("%s\n%s/inner\n", f.dir, f.dir)
+	if out != expected {
+		t.Errorf("Expected:\n%s\n\nActual:\n%s", expected, out)
 	}
 }
 
