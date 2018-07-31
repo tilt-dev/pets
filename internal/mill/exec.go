@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/build"
 	"io"
+	"net"
 	"net/url"
 	"os"
 	"path"
@@ -252,12 +253,13 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 		return nil, err
 	}
 
-	err = p.Procfs.ModifyProc(pr.WithExposedHost(host, port))
+	pr = pr.WithExposedHost(host, port)
+	err = p.Procfs.ModifyProc(pr)
 	if err != nil {
 		return nil, err
 	}
 
-	return server, nil
+	return petsProcToSkylarkValue(pr), nil
 }
 
 func (p *Petsitter) skylarkValueToPetsProc(v skylark.Value) (proc.PetsProc, error) {
@@ -306,6 +308,10 @@ func petsProcToSkylarkValue(p proc.PetsProc) skylark.Value {
 	}
 	if p.Port != 0 {
 		d.Set(skylark.String("port"), skylark.MakeInt(p.Port))
+	}
+	if p.Hostname != "" && p.Port != 0 {
+		host := net.JoinHostPort(p.Hostname, fmt.Sprintf("%d", p.Port))
+		d.Set(skylark.String("host"), skylark.String(host))
 	}
 	return d
 }
