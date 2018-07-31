@@ -31,7 +31,6 @@ var DownCmd = &cobra.Command{
 
 		fmt.Printf("Process ID\tName\n")
 		for _, p := range procs {
-			fmt.Printf("%d\t%s\n", p.Pid, p.DisplayName)
 			err := syscall.Kill(p.Pid, syscall.SIGINT)
 			if err != nil {
 				return
