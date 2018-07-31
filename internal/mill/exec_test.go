@@ -138,7 +138,9 @@ func TestRegister(t *testing.T) {
 	file := filepath.Join(f.dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`
 def start_local():
-  return service(start("sleep 100"), "localhost", 8080)
+  result = service(start("sleep 100"), "localhost", 8080)
+  print(result["host"])
+  return result
 
 register("blorg-frontend", "local", start_local)
 `), os.FileMode(0777))
@@ -156,6 +158,11 @@ register("blorg-frontend", "local", start_local)
 	}
 
 	f.assertHasServiceKey(key)
+
+	out := f.stdout.String()
+	if !strings.Contains(out, "localhost:8080") {
+		t.Errorf("Expected 'localhost:8080'. Actual: %s", out)
+	}
 }
 
 type petFixture struct {
