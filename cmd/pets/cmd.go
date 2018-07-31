@@ -17,12 +17,13 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "just print recommended commands, don't run them")
 	RootCmd.AddCommand(ListCmd)
 	RootCmd.AddCommand(DownCmd)
+	initUpCmd()
 }
 
 var RootCmd = &cobra.Command{
 	Use:   "pets [arguments]",
 	Short: "PETS makes it easy to manage lots of servers running on your machine that you want to keep a close eye on for local development.",
-	Long: `A PETS file is like a Makefile for running servers and connecting them 
+	Long: `A PETS file is like a Makefile for running servers and connecting them
 	to other servers. With PETS, we can switch back and forth quickly
 	between servers running locally and servers running in the cloud.`,
 	Run: pets,
