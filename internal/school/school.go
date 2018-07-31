@@ -74,12 +74,43 @@ func (s *PetSchool) healthyServices() (map[service.Key]proc.PetsProc, error) {
 }
 
 // Bring up the service with the given key, including all its dependencies.
-func (s *PetSchool) Up(key service.Key) (proc.PetsProc, error) {
+func (s *PetSchool) UpByKey(key service.Key) (proc.PetsProc, error) {
 	services, err := s.healthyServices()
 	if err != nil {
 		return proc.PetsProc{}, err
 	}
 	return s.up(key, services)
+}
+
+// Bring up all the services of a given tier. Returns an error if there are no services in this tier.
+func (s *PetSchool) UpByTier(tier service.Tier) ([]proc.PetsProc, error) {
+	services, err := s.healthyServices()
+	if err != nil {
+		return nil, err
+	}
+
+	allProviders := s.providers
+	keys := make([]service.Key, 0)
+	for key, _ := range allProviders {
+		if key.Tier == tier {
+			keys = append(keys, key)
+		}
+	}
+
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("No service providers found for tier: %q", tier)
+	}
+
+	procs := make([]proc.PetsProc, len(keys))
+	for i, key := range keys {
+		proc, err := s.up(key, services)
+		if err != nil {
+			return nil, err
+		}
+		procs[i] = proc
+	}
+
+	return procs, nil
 }
 
 func (s *PetSchool) up(key service.Key, petsUp map[service.Key]proc.PetsProc) (proc.PetsProc, error) {
