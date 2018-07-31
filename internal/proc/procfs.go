@@ -49,11 +49,20 @@ func (f ProcFS) AddProc(proc PetsProc) error {
 		return err
 	}
 
+	// If a process with the same pid is already in the json file, something
+	// has gone terribly wrong.
+	for _, p := range procs {
+		if p.Pid == proc.Pid {
+			return fmt.Errorf("Proc with pid %d already exists: %+v", proc.Pid, proc)
+		}
+	}
+
 	procs = append(procs, proc)
 	return f.procsToFS(procs)
 }
 
-// Remove a proc from the JSON file
+// Remove a proc from the JSON file. If the process has already died,
+// that's ok, it's not an error.
 func (f ProcFS) RemoveProc(proc PetsProc) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
