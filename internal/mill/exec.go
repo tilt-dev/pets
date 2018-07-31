@@ -42,8 +42,9 @@ func (p *Petsitter) newThread() *skylark.Thread {
 
 func (p *Petsitter) builtins() skylark.StringDict {
 	return skylark.StringDict{
-		"run":   skylark.NewBuiltin("run", p.run),
-		"start": skylark.NewBuiltin("start", p.start),
+		"run":     skylark.NewBuiltin("run", p.run),
+		"start":   skylark.NewBuiltin("start", p.start),
+		"service": skylark.NewBuiltin("service", p.service),
 	}
 }
 
@@ -171,7 +172,6 @@ func (p *Petsitter) execPetsFileAt(t *skylark.Thread, module string, isMissingOk
 
 // Service(server, “localhost”, 8081)
 func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
-	// Are we starting a process (service?) or modifying one?
 	var server skylark.Dict
 	var host string
 	var port int
@@ -183,28 +183,22 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 		return nil, err
 	}
 
-	// get pid from server as go object - get process of pid from procfs list (all in go)
-	for _, serverItem := range server.Items() {
-		key := serverItem[0]
-		skylarkPid, found, err := server.Get(key)
-		if !found {
-			return nil, err
-		}
-		pkey, err = skylark.NumberToInt(skylarkPid)
-		pid64, _ := pkey.Int64()
-		pid = int(pid64)
-		if err != nil {
-			return nil, err
-		}
+	sPid, found, err := server.Get(skylark.String("pid"))
+	if !found {
+		return nil, err
+	}
+	pkey, err = skylark.NumberToInt(sPid)
+	pid64, _ := pkey.Int64()
+	pid = int(pid64)
+	if err != nil {
+		return nil, err
 	}
 
-	// from the pid, get the process. then use that to modify the process.
 	procs, err := p.Procfs.ProcsFromFS()
 	if err != nil {
 		return nil, err
 	}
 	for _, p := range procs {
-		// find when pid == proc
 		if p.Pid == pid {
 			pr = p
 		}
