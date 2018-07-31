@@ -29,11 +29,12 @@ var DownCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("Process ID\tName\n")
 		for _, p := range procs {
+			// TODO: Decide what to do in edge cases, when killing pets doesn't work
 			err := syscall.Kill(p.Pid, syscall.SIGINT)
 			if err != nil {
-				return
+				fmt.Println(err)
+				os.Exit(1)
 			}
 		}
 	},
