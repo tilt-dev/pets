@@ -76,7 +76,11 @@ func (p *Petsitter) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tup
 		return nil, err
 	}
 
-	cwd, _ := os.Getwd()
+	cwd, err := p.wd(t)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := p.Runner.RunWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
 		return nil, err
 	}
@@ -99,7 +103,11 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 		return nil, err
 	}
 
-	cwd, _ := os.Getwd()
+	cwd, err := p.wd(t)
+	if err != nil {
+		return nil, err
+	}
+
 	if process, err = p.Runner.StartWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
 		return nil, err
 	}
@@ -258,6 +266,19 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 	}
 
 	return server, nil
+}
+
+// Get the working directory of the current skylark thread.
+func (p *Petsitter) wd(t *skylark.Thread) (string, error) {
+	frame := t.TopFrame()
+	for frame.Position().Filename() == "<builtin>" {
+		frame = frame.Parent()
+	}
+	file := frame.Position().Filename()
+	if file == "" {
+		return "", fmt.Errorf("Could not get the working directory for the current frame")
+	}
+	return filepath.Dir(file), nil
 }
 
 func (p *Petsitter) skylarkValueToPetsProc(v skylark.Value) (proc.PetsProc, error) {
