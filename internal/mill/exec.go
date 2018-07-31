@@ -20,6 +20,7 @@ type Petsitter struct {
 	Stdout io.Writer
 	Stderr io.Writer
 	Runner proc.Runner
+	Procfs proc.ProcFS
 }
 
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
@@ -41,8 +42,9 @@ func (p *Petsitter) newThread() *skylark.Thread {
 
 func (p *Petsitter) builtins() skylark.StringDict {
 	return skylark.StringDict{
-		"run":   skylark.NewBuiltin("run", p.run),
-		"start": skylark.NewBuiltin("start", p.start),
+		"run":     skylark.NewBuiltin("run", p.run),
+		"start":   skylark.NewBuiltin("start", p.start),
+		"service": skylark.NewBuiltin("service", p.service),
 	}
 }
 
@@ -166,6 +168,45 @@ func (p *Petsitter) execPetsFileAt(t *skylark.Thread, module string, isMissingOk
 	}
 
 	return skylark.StringDict(result), nil
+}
+
+// Service(server, “localhost”, 8081)
+func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
+	var server skylark.Dict
+	var host string
+	var port int
+	var pr proc.PetsProc
+	var pkey skylark.Int
+	var pid int
+
+	if err := skylark.UnpackArgs("service", args, kwargs, "server", &server, "host", &host, "port", &port); err != nil {
+		return nil, err
+	}
+
+	sPid, found, err := server.Get(skylark.String("pid"))
+	if !found {
+		return nil, err
+	}
+	pkey, err = skylark.NumberToInt(sPid)
+	pid64, _ := pkey.Int64()
+	pid = int(pid64)
+	if err != nil {
+		return nil, err
+	}
+
+	procs, err := p.Procfs.ProcsFromFS()
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range procs {
+		if p.Pid == pid {
+			pr = p
+		}
+	}
+
+	p.Procfs.ModifyProc(pr.WithExposedHost(host, port))
+
+	return skylark.None, nil
 }
 
 func argToCmd(b *skylark.Builtin, argV skylark.Value) ([]string, error) {

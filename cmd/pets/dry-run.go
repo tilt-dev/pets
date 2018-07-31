@@ -24,6 +24,7 @@ var DryRunCmd = &cobra.Command{
 			Stdout: os.Stdout,
 			Stderr: os.Stderr,
 			Runner: runner,
+			Procfs: procfs,
 		}
 		err = petsitter.ExecFile(file)
 		if err != nil {
