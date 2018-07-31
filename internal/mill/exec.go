@@ -12,6 +12,7 @@ import (
 	"github.com/google/skylark"
 	"github.com/windmilleng/pets/internal/loader"
 	"github.com/windmilleng/pets/internal/proc"
+	"github.com/windmilleng/pets/internal/school"
 )
 
 const Petsfile = "Petsfile"
@@ -21,6 +22,17 @@ type Petsitter struct {
 	Stderr io.Writer
 	Runner proc.Runner
 	Procfs proc.ProcFS
+	School *school.PetSchool
+}
+
+func NewPetsitter(stdout, stderr io.Writer, runner proc.Runner, procfs proc.ProcFS, school *school.PetSchool) *Petsitter {
+	return &Petsitter{
+		Stdout: stdout,
+		Stderr: stderr,
+		Runner: runner,
+		Procfs: procfs,
+		School: school,
+	}
 }
 
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
