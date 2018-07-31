@@ -10,6 +10,7 @@ import (
 
 	"github.com/windmilleng/pets/internal/proc"
 	"github.com/windmilleng/pets/internal/school"
+	"github.com/windmilleng/pets/internal/service"
 	"github.com/windmilleng/wmclient/pkg/dirs"
 )
 
@@ -130,6 +131,33 @@ def random_number():
 	}
 }
 
+func TestRegister(t *testing.T) {
+	f := newPetFixture(t)
+	petsitter := f.petsitter
+
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+def start_local():
+  return service(start("sleep 100"), "localhost", 8080)
+
+register("blorg-frontend", "local", start_local)
+`), os.FileMode(0777))
+
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	school := f.petsitter.School
+	key := service.NewKey("blorg-frontend", "local")
+	_, err = school.UpByKey(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f.assertHasServiceKey(key)
+}
+
 type petFixture struct {
 	t         *testing.T
 	petsitter *Petsitter
@@ -158,6 +186,21 @@ func newPetFixture(t *testing.T) *petFixture {
 		dir:       dir,
 		procfs:    procfs,
 	}
+}
+
+func (f *petFixture) assertHasServiceKey(key service.Key) {
+	procs, err := f.procfs.ProcsFromFS()
+	if err != nil {
+		f.t.Fatal(err)
+	}
+
+	for _, proc := range procs {
+		if proc.ServiceName == key.Name && proc.ServiceTier == key.Tier {
+			return
+		}
+	}
+
+	f.t.Errorf("Service key not found in running service list: %+v", key)
 }
 
 func (f *petFixture) tearDown() {
