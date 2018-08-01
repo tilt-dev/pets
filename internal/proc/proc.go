@@ -20,6 +20,8 @@ type PetsProc struct {
 	// When the process started
 	StartTime time.Time
 
+	TimeSince time.Duration
+
 	// The hostname that the process is listening on (e.g., 'localhost')
 	Hostname string `json:",omitempty"`
 
@@ -49,6 +51,7 @@ func (p PetsProc) WithServiceKey(key service.Key) PetsProc {
 	p.ServiceName = key.Name
 	p.ServiceTier = key.Tier
 	p.DisplayName = string(p.ServiceName) + "-" + string(p.ServiceTier)
+	p.TimeSince = time.Since(p.StartTime)
 	return p
 }
 
