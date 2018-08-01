@@ -20,8 +20,6 @@ type PetsProc struct {
 	// When the process started
 	StartTime time.Time
 
-	TimeSince time.Duration
-
 	// The hostname that the process is listening on (e.g., 'localhost')
 	Hostname string `json:",omitempty"`
 
@@ -43,6 +41,10 @@ func (p PetsProc) WithExposedHost(hostname string, port int) PetsProc {
 	return p
 }
 
+func (p PetsProc) TimeSince() time.Duration {
+	return time.Since(p.StartTime)
+}
+
 // Creates a new PetsProc that matches a service key.
 //
 // Calling this method automatically creates a copy because it's a struct method
@@ -51,7 +53,6 @@ func (p PetsProc) WithServiceKey(key service.Key) PetsProc {
 	p.ServiceName = key.Name
 	p.ServiceTier = key.Tier
 	p.DisplayName = string(p.ServiceName) + "-" + string(p.ServiceTier)
-	p.TimeSince = time.Since(p.StartTime)
 	return p
 }
 
