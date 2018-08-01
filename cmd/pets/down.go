@@ -2,7 +2,6 @@ package pets
 
 import (
 	"fmt"
-	"os"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -14,14 +13,12 @@ var DownCmd = &cobra.Command{
 	Run: func(cms *cobra.Command, args []string) {
 		procfs, err := proc.NewProcFS()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fatal(err)
 		}
 
 		procs, err := procfs.ProcsFromFS()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fatal(err)
 		}
 
 		if len(procs) == 0 {
@@ -38,8 +35,7 @@ var DownCmd = &cobra.Command{
 			pgid := -p.Pid
 			err := syscall.Kill(pgid, syscall.SIGINT)
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				fatal(err)
 			}
 		}
 	},

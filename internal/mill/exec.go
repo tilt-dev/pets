@@ -20,28 +20,53 @@ import (
 
 const Petsfile = "Petsfile"
 
+type scriptResult struct {
+	globals skylark.StringDict
+	err     error
+
+	// if done is false, that means the script is in the process of loading.
+	done bool
+}
+
 type Petsitter struct {
 	Stdout io.Writer
 	Stderr io.Writer
 	Runner proc.Runner
 	Procfs proc.ProcFS
 	School *school.PetSchool
+
+	// A script file can only be loaded once.
+	resultsByFile map[string]scriptResult
 }
 
 func NewPetsitter(stdout, stderr io.Writer, runner proc.Runner, procfs proc.ProcFS, school *school.PetSchool) *Petsitter {
 	return &Petsitter{
-		Stdout: stdout,
-		Stderr: stderr,
-		Runner: runner,
-		Procfs: procfs,
-		School: school,
+		Stdout:        stdout,
+		Stderr:        stderr,
+		Runner:        runner,
+		Procfs:        procfs,
+		School:        school,
+		resultsByFile: make(map[string]scriptResult),
 	}
 }
 
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
 func (p *Petsitter) ExecFile(file string) error {
+	if result, ok := p.resultsByFile[file]; ok {
+		if !result.done {
+			return fmt.Errorf("Pets already executing file: %s", file)
+		}
+		return result.err
+	}
+
+	p.resultsByFile[file] = scriptResult{}
 	thread := p.newThread()
-	_, err := skylark.ExecFile(thread, file, nil, p.builtins())
+	globals, err := skylark.ExecFile(thread, file, nil, p.builtins())
+	p.resultsByFile[file] = scriptResult{
+		globals: globals,
+		err:     err,
+		done:    true,
+	}
 	return err
 }
 
@@ -233,9 +258,25 @@ func (p *Petsitter) execPetsFileAt(t *skylark.Thread, module string, isMissingOk
 		return nil, fmt.Errorf("File %q should be a plaintext Petsfile", module)
 	}
 
-	// The most exciting part of the function is finally here! We have an executable
-	// Petsfile, so run it and grab the globals.
-	globals, err := skylark.ExecFile(t, module, nil, p.builtins())
+	// Check to see if we've already executed the file.
+	var globals skylark.StringDict
+	prevResult, ok := p.resultsByFile[module]
+	if ok {
+		if !prevResult.done {
+			return nil, fmt.Errorf("cycle in load graph detected")
+		}
+		globals, err = prevResult.globals, prevResult.err
+	} else {
+		// The most exciting part of the function is finally here! We have an executable
+		// Petsfile, so run it and grab the globals.
+		globals, err = skylark.ExecFile(t, module, nil, p.builtins())
+		p.resultsByFile[module] = scriptResult{
+			globals: globals,
+			err:     err,
+			done:    true,
+		}
+	}
+
 	if err != nil {
 		return nil, err
 	}
