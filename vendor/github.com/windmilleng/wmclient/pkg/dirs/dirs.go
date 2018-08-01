@@ -77,15 +77,22 @@ func (d *WindmillDir) Root() string {
 	return d.dir
 }
 
-func (d *WindmillDir) WriteFile(p, text string) error {
-	if filepath.IsAbs(p) {
-		return fmt.Errorf("WindmillDir.WriteFile: p must be relative to .windmill root: %v", p)
+func (d *WindmillDir) OpenFile(p string, flag int, perm os.FileMode) (*os.File, error) {
+	err := d.MkdirAll(filepath.Dir(p))
+	if err != nil {
+		return nil, err
 	}
 
-	abs := filepath.Join(d.dir, p)
-	os.MkdirAll(filepath.Dir(abs), os.FileMode(0700))
+	return os.OpenFile(filepath.Join(d.dir, p), flag, perm)
+}
 
-	return ioutil.WriteFile(abs, []byte(text), os.FileMode(0700))
+func (d *WindmillDir) WriteFile(p, text string) error {
+	err := d.MkdirAll(filepath.Dir(p))
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(filepath.Join(d.dir, p), []byte(text), os.FileMode(0700))
 }
 
 func (d *WindmillDir) ReadFile(p string) (string, error) {

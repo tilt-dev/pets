@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/google/skylark"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +36,16 @@ func pets(cmd *cobra.Command, args []string) {
 	} else {
 		fmt.Fprintln(os.Stderr, "You ran pets!")
 	}
+}
+
+func fatal(err error) {
+	evalErr, isEvalErr := err.(*skylark.EvalError)
+	if isEvalErr {
+		fmt.Println(evalErr.Backtrace())
+	} else {
+		fmt.Println(err)
+	}
+	os.Exit(1)
 }
 
 // func Execute() {
