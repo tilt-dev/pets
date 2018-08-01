@@ -41,6 +41,10 @@ func (p PetsProc) WithExposedHost(hostname string, port int) PetsProc {
 	return p
 }
 
+func (p PetsProc) TimeSince() time.Duration {
+	return time.Since(p.StartTime)
+}
+
 // Creates a new PetsProc that matches a service key.
 //
 // Calling this method automatically creates a copy because it's a struct method
