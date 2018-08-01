@@ -83,7 +83,7 @@ func TestProcFSKey(t *testing.T) {
 
 	procfs.ModifyProc(proc.WithServiceKey(service.NewKey("frontend", "local")))
 
-	expected := `{"Pid":12345,"StartTime":"0001-01-01T00:00:00Z","ServiceName":"frontend","ServiceTier":"local"}
+	expected := `{"DisplayName":"frontend-local","Pid":12345,"StartTime":"0001-01-01T00:00:00Z","ServiceName":"frontend","ServiceTier":"local"}
 `
 	f.assertProcFile(expected)
 }
