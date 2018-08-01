@@ -28,9 +28,9 @@ var ListCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("Process ID\tName\n")
+		fmt.Printf("%-20s%-20s\n", "Process ID", "Name")
 		for _, p := range procs {
-			fmt.Printf("%d\t%s\n", p.Pid, p.DisplayName)
+			fmt.Printf("%-20d%-20s\n", p.Pid, p.DisplayName)
 		}
 	},
 }

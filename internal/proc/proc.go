@@ -48,6 +48,7 @@ func (p PetsProc) WithExposedHost(hostname string, port int) PetsProc {
 func (p PetsProc) WithServiceKey(key service.Key) PetsProc {
 	p.ServiceName = key.Name
 	p.ServiceTier = key.Tier
+	p.DisplayName = string(p.ServiceName) + "-" + string(p.ServiceTier)
 	return p
 }
 
