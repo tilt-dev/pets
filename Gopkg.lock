@@ -40,17 +40,18 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:95fe9a3d458a0e40c0cc4cdcecf21cc084c88713c269fb60b24b1d09fc81239c"
+  digest = "1:56345a4c69725f9cdef3a023886fd2d25539c04a9471701ed0ec25914fc5cd01"
   name = "github.com/windmilleng/wmclient"
   packages = ["pkg/dirs"]
   pruneopts = "UT"
-  revision = "31c1725257e1cbda5a40d73bdbb0e824bda27ff6"
+  revision = "77451f3750e7ea1b188c63d0472460dc092a8f32"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/google/skylark",
+    "github.com/google/skylark/syntax",
     "github.com/spf13/cobra",
     "github.com/windmilleng/wmclient/pkg/dirs",
   ]
