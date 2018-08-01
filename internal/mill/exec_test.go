@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/skylark"
 	"github.com/windmilleng/pets/internal/proc"
@@ -74,11 +75,70 @@ func TestStart(t *testing.T) {
 	petsitter, stdout := f.petsitter, f.stdout
 	file := filepath.Join(f.dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`print(start("sleep 10"))`), os.FileMode(0777))
-	petsitter.ExecFile(file)
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	out := stdout.String()
 	if !strings.Contains(out, "pid") {
 		t.Errorf("Expected 'meow'. Actual: %s", out)
+	}
+}
+
+func TestStartLogs(t *testing.T) {
+	f := newPetFixture(t)
+	defer f.tearDown()
+
+	petsitter := f.petsitter
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`start("echo meow")`), os.FileMode(0777))
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	time.Sleep(10 * time.Millisecond)
+	contents, err := f.procfs.ReadLogFile(service.Key{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if contents != "meow\n" {
+		t.Errorf("Expected 'meow'. Actual: %s", contents)
+	}
+}
+func TestStartLogsInService(t *testing.T) {
+	f := newPetFixture(t)
+	defer f.tearDown()
+
+	petsitter := f.petsitter
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+def start_local():
+  return service(start("echo meow"), "localhost", 8080)
+
+register("frontend", "local", start_local)`), os.FileMode(0777))
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	school := f.petsitter.School
+	key := service.NewKey("frontend", "local")
+	_, err = school.UpByKey(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	time.Sleep(10 * time.Millisecond)
+	contents, err := f.procfs.ReadLogFile(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if contents != "meow\n" {
+		t.Errorf("Expected 'meow'. Actual: %s", contents)
 	}
 }
 

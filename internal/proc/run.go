@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"syscall"
 	"time"
+
+	"github.com/windmilleng/pets/internal/service"
 )
 
 type Runner struct {
@@ -36,6 +38,15 @@ func (r Runner) RunWithIO(args []string, cwd string, stdout, stderr io.Writer) e
 	err = pCmd.Cmd.Wait()
 	r.fs.RemoveProc(pCmd.Proc)
 	return err
+}
+
+func (r Runner) StartWithStdLogs(args []string, cwd string, key service.Key) (PetsCommand, error) {
+	writer, err := r.fs.OpenFreshLogFile(key)
+	if err != nil {
+		return PetsCommand{}, fmt.Errorf("StartWithStdLogs: %v", err)
+	}
+
+	return r.StartWithIO(args, cwd, writer, writer)
 }
 
 // Starts a command, waiting until it exits, forwarding all stdout/stderr to the given streams.

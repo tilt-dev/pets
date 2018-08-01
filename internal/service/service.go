@@ -1,6 +1,11 @@
 // Data structures for identifying services (processes with network host/port)
 package service
 
+import (
+	"fmt"
+	"regexp"
+)
+
 // A name for the service, e.g., "my-frontend".
 //
 // In a 'pets up', only one service of each name is allowed.
@@ -25,4 +30,29 @@ type Key struct {
 
 func NewKey(name Name, tier Tier) Key {
 	return Key{Name: name, Tier: tier}
+}
+
+var validNameMatcher = regexp.MustCompile("^[a-zA-Z_-][a-zA-Z0-9_-]*$")
+var validTierMatcher = validNameMatcher
+
+func (n Name) Validate() error {
+	if !validNameMatcher.MatchString(string(n)) {
+		return fmt.Errorf("Invalid service name %q. Service names must match regexp %q", n, validNameMatcher)
+	}
+	return nil
+}
+
+func (t Tier) Validate() error {
+	if !validTierMatcher.MatchString(string(t)) {
+		return fmt.Errorf("Invalid service tier %q. Service names must match regexp %q", t, validTierMatcher)
+	}
+	return nil
+}
+
+func (k Key) Validate() error {
+	err := k.Name.Validate()
+	if err != nil {
+		return err
+	}
+	return k.Tier.Validate()
 }

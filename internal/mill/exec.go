@@ -20,6 +20,9 @@ import (
 
 const Petsfile = "Petsfile"
 
+// :grimace: The lookup key to find the service.Key on the Thread
+const serviceKeyKey = "service_key"
+
 type scriptResult struct {
 	globals skylark.StringDict
 	err     error
@@ -60,7 +63,7 @@ func (p *Petsitter) ExecFile(file string) error {
 	}
 
 	p.resultsByFile[file] = scriptResult{}
-	thread := p.newThread()
+	thread := p.newThread(service.Key{})
 	globals, err := skylark.ExecFile(thread, file, nil, p.builtins())
 	p.resultsByFile[file] = scriptResult{
 		globals: globals,
@@ -70,13 +73,16 @@ func (p *Petsitter) ExecFile(file string) error {
 	return err
 }
 
-func (p *Petsitter) newThread() *skylark.Thread {
+// key: The service key being started on this thread.
+//      The empty key indicates the global scope.
+func (p *Petsitter) newThread(key service.Key) *skylark.Thread {
 	thread := &skylark.Thread{
 		Print: func(_ *skylark.Thread, msg string) {
 			fmt.Fprintln(p.Stdout, msg)
 		},
 		Load: p.load,
 	}
+	thread.SetLocal(serviceKeyKey, key)
 	return thread
 }
 
@@ -135,7 +141,9 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 		return nil, err
 	}
 
-	if process, err = p.Runner.StartWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
+	key := p.serviceKey(t)
+
+	if process, err = p.Runner.StartWithStdLogs(cmdArgs, cwd, key); err != nil {
 		return nil, err
 	}
 	return petsProcToSkylarkValue(process.Proc), nil
@@ -174,13 +182,23 @@ func (p *Petsitter) register(t *skylark.Thread, fn *skylark.Builtin, args skylar
 			fn.Name(), providerV, providerV.NumParams(), len(deps))
 	}
 
+	key := service.Key{
+		Name: service.Name(name),
+		Tier: service.Tier(tier),
+	}
+	err = key.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	provider := school.Provider(func(args []proc.PetsProc) (proc.PetsProc, error) {
 		args = args[0:providerV.NumParams()]
 		argsV := make([]skylark.Value, providerV.NumParams())
 		for i, arg := range args {
 			argsV[i] = petsProcToSkylarkValue(arg)
 		}
-		result, err := providerV.Call(p.newThread(), argsV, nil)
+		thread := p.newThread(key)
+		result, err := providerV.Call(thread, argsV, nil)
 		if err != nil {
 			return proc.PetsProc{}, err
 		}
@@ -189,10 +207,7 @@ func (p *Petsitter) register(t *skylark.Thread, fn *skylark.Builtin, args skylar
 	})
 
 	pos := p.displayPosition(t)
-	err = p.School.AddProvider(service.Key{
-		Name: service.Name(name),
-		Tier: service.Tier(tier),
-	}, provider, deps, fmt.Sprintf("%s:%d", pos.Filename(), pos.Line))
+	err = p.School.AddProvider(key, provider, deps, fmt.Sprintf("%s:%d", pos.Filename(), pos.Line))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", fn.Name(), err)
 	}
@@ -310,6 +325,16 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 	}
 
 	return petsProcToSkylarkValue(pr), nil
+}
+
+// All Pets threads should have a service.Key attached, even if it's an empty one.
+func (p *Petsitter) serviceKey(t *skylark.Thread) service.Key {
+	obj := t.Local(serviceKeyKey)
+	key, ok := obj.(service.Key)
+	if !ok {
+		panic("Missing service key on thread")
+	}
+	return key
 }
 
 // Get the best position to display for the current skylark thread.
