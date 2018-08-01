@@ -2,11 +2,7 @@ package pets
 
 import (
 	"fmt"
-<<<<<<< HEAD
-	"os"
 	"time"
-=======
->>>>>>> b474bd4d3bbf79532ba994d9343250265305eeae
 
 	"github.com/spf13/cobra"
 	"github.com/windmilleng/pets/internal/proc"
