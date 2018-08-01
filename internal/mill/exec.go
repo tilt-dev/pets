@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/skylark"
+	"github.com/google/skylark/syntax"
 	"github.com/windmilleng/pets/internal/loader"
 	"github.com/windmilleng/pets/internal/proc"
 	"github.com/windmilleng/pets/internal/school"
@@ -162,7 +163,7 @@ func (p *Petsitter) register(t *skylark.Thread, fn *skylark.Builtin, args skylar
 		return p.skylarkValueToPetsProc(result)
 	})
 
-	pos := t.TopFrame().Position()
+	pos := p.displayPosition(t)
 	err = p.School.AddProvider(service.Key{
 		Name: service.Name(name),
 		Tier: service.Tier(tier),
@@ -270,13 +271,18 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 	return petsProcToSkylarkValue(pr), nil
 }
 
-// Get the working directory of the current skylark thread.
-func (p *Petsitter) wd(t *skylark.Thread) (string, error) {
+// Get the best position to display for the current skylark thread.
+func (p *Petsitter) displayPosition(t *skylark.Thread) syntax.Position {
 	frame := t.TopFrame()
 	for frame.Position().Filename() == "<builtin>" {
 		frame = frame.Parent()
 	}
-	file := frame.Position().Filename()
+	return frame.Position()
+}
+
+// Get the working directory of the current skylark thread.
+func (p *Petsitter) wd(t *skylark.Thread) (string, error) {
+	file := p.displayPosition(t).Filename()
 	if file == "" {
 		return "", fmt.Errorf("Could not get the working directory for the current frame")
 	}
