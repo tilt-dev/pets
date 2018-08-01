@@ -2,7 +2,6 @@ package pets
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/windmilleng/pets/internal/proc"
@@ -13,14 +12,12 @@ var ListCmd = &cobra.Command{
 	Run: func(cms *cobra.Command, args []string) {
 		procfs, err := proc.NewProcFS()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fatal(err)
 		}
 
 		procs, err := procfs.ProcsFromFS()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fatal(err)
 		}
 
 		if len(procs) == 0 {

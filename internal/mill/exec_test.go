@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/skylark"
 	"github.com/windmilleng/pets/internal/proc"
 	"github.com/windmilleng/pets/internal/school"
 	"github.com/windmilleng/pets/internal/service"
@@ -129,6 +130,66 @@ def random_number():
 	out := stdout.String()
 	if out != "4\n" {
 		t.Errorf("Expected print '4'. Actual: %s", out)
+	}
+}
+
+// If we load a file twice (which is easy to do when you have dependency diamonds),
+// we should only execute it once.
+func TestLoadTwice(t *testing.T) {
+	f := newPetFixture(t)
+	defer f.tearDown()
+
+	petsitter, stdout := f.petsitter, f.stdout
+
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+load("inner", "random_number")
+load("inner", "dir")
+print(random_number())
+`), os.FileMode(0777))
+
+	innerFile := filepath.Join(f.dir, "inner", "Petsfile")
+	os.MkdirAll(filepath.Dir(innerFile), os.FileMode(0777))
+	ioutil.WriteFile(innerFile, []byte(`
+def random_number():
+  return 4
+print('loaded')
+`), os.FileMode(0777))
+
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := stdout.String()
+	if out != "loaded\n4\n" {
+		t.Errorf("Expected print 'loaded\n4'. Actual: %s", out)
+	}
+}
+
+// If there's a cycle between load graphs, we should detect this
+// and be able to print the cycle.
+func TestLoadCycle(t *testing.T) {
+	f := newPetFixture(t)
+	defer f.tearDown()
+
+	petsitter := f.petsitter
+
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+load("inner", "dir")
+`), os.FileMode(0777))
+
+	innerFile := filepath.Join(f.dir, "inner", "Petsfile")
+	os.MkdirAll(filepath.Dir(innerFile), os.FileMode(0777))
+	ioutil.WriteFile(innerFile, []byte(`
+load("../", "dir")
+`), os.FileMode(0777))
+
+	err := petsitter.ExecFile(file)
+	evalErr, isEvalErr := err.(*skylark.EvalError)
+	if !isEvalErr || !strings.Contains(evalErr.Error(), "cycle in load graph detected") {
+		t.Errorf("Expected EvalError with cycle. Actual: %v", err)
 	}
 }
 

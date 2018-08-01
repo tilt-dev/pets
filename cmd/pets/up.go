@@ -38,14 +38,12 @@ func runUpCmd(cmd *cobra.Command, args []string) {
 	file := mill.GetFilePath()
 	petsitter, err := newPetsitter()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fatal(err)
 	}
 
 	err = petsitter.ExecFile(file)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fatal(err)
 	}
 
 	school := petsitter.School
@@ -55,14 +53,12 @@ func runUpCmd(cmd *cobra.Command, args []string) {
 			Tier: service.Tier(upTier),
 		})
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fatal(err)
 		}
 	} else {
 		_, err = school.UpByTier(service.Tier(upTier))
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fatal(err)
 		}
 	}
 }
