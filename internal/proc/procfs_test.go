@@ -24,7 +24,7 @@ func TestProcFS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := `{"Pid":12345,"StartTime":"0001-01-01T00:00:00Z"}
+	expected := `{"Pid":12345,"StartTime":"0001-01-01T00:00:00Z","TimeSince":0}
 `
 	f.assertProcFile(expected)
 
@@ -65,7 +65,7 @@ func TestProcFSHost(t *testing.T) {
 
 	procfs.ModifyProc(proc.WithExposedHost("localhost", 8080))
 
-	expected := `{"Pid":12345,"StartTime":"0001-01-01T00:00:00Z","Hostname":"localhost","Port":8080}
+	expected := `{"Pid":12345,"StartTime":"0001-01-01T00:00:00Z","TimeSince":0,"Hostname":"localhost","Port":8080}
 `
 	f.assertProcFile(expected)
 }
@@ -83,7 +83,7 @@ func TestProcFSKey(t *testing.T) {
 
 	procfs.ModifyProc(proc.WithServiceKey(service.NewKey("frontend", "local")))
 
-	expected := `{"DisplayName":"frontend-local","Pid":12345,"StartTime":"0001-01-01T00:00:00Z","ServiceName":"frontend","ServiceTier":"local"}
+	expected := `{"DisplayName":"frontend-local","Pid":12345,"StartTime":"0001-01-01T00:00:00Z","TimeSince":9223372036854775807,"ServiceName":"frontend","ServiceTier":"local"}
 `
 	f.assertProcFile(expected)
 }
@@ -105,8 +105,8 @@ func TestProcFSRemoveDead(t *testing.T) {
 
 	cmd1.Wait()
 
-	expected := fmt.Sprintf(`{"Pid":%d,"StartTime":"0001-01-01T00:00:00Z"}
-{"Pid":%d,"StartTime":"0001-01-01T00:00:00Z"}
+	expected := fmt.Sprintf(`{"Pid":%d,"StartTime":"0001-01-01T00:00:00Z","TimeSince":0}
+{"Pid":%d,"StartTime":"0001-01-01T00:00:00Z","TimeSince":0}
 `, cmd1.Process.Pid, cmd2.Process.Pid)
 	f.assertProcFile(expected)
 
@@ -115,7 +115,7 @@ func TestProcFSRemoveDead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected = fmt.Sprintf(`{"Pid":%d,"StartTime":"0001-01-01T00:00:00Z"}
+	expected = fmt.Sprintf(`{"Pid":%d,"StartTime":"0001-01-01T00:00:00Z","TimeSince":0}
 `, cmd2.Process.Pid)
 	f.assertProcFile(expected)
 }
