@@ -198,6 +198,27 @@ register("blorg-frontend", "local", start_local)
 	}
 }
 
+func TestRegisterTwice(t *testing.T) {
+	f := newPetFixture(t)
+	petsitter := f.petsitter
+
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+def start_local():
+  return service(start("sleep 100"), "localhost", 8080)
+
+register("blorg-frontend", "local", start_local)
+register("blorg-frontend", "local", start_local)
+`), os.FileMode(0777))
+
+	err := petsitter.ExecFile(file)
+	if err == nil ||
+		!strings.Contains(err.Error(), "Duplicate provider") ||
+		!strings.Contains(err.Error(), fmt.Sprintf("First:  %s/Petsfile:5", f.dir)) {
+		t.Errorf("Expected duplicate provider error. Actual: %v", err)
+	}
+}
+
 type petFixture struct {
 	t         *testing.T
 	petsitter *Petsitter
