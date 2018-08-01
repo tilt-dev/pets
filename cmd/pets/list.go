@@ -30,44 +30,24 @@ var ListCmd = &cobra.Command{
 		fmt.Printf("%-30s%-30s\n", "Name", "Age")
 		for _, p := range procs {
 			el := timeDur(p.TimeSince().Truncate(time.Minute))
-			// d := p.TimeSince()
-			fmt.Printf("%-30s%-30d\n", p.DisplayName, el)
+			fmt.Printf("%-30s%-30s\n", p.DisplayName, el)
 		}
 	},
 }
 
-// why does THIS work
-func timeDur(d time.Duration) int {
+func timeDur(d time.Duration) string {
 	if seconds := int(d.Seconds()); seconds < -1 {
-		return 0
+		return fmt.Sprintf("<invalid>")
 	} else if seconds < 0 {
-		return 0
+		return fmt.Sprintf("0s")
 	} else if seconds < 60 {
-		return seconds
+		return fmt.Sprintf("%ds", seconds)
 	} else if minutes := int(d.Minutes()); minutes < 60 {
-		return minutes
+		return fmt.Sprintf("%dm", minutes)
 	} else if hours := int(d.Hours()); hours < 24 {
-		return hours
+		return fmt.Sprintf("%dh", hours)
 	} else if hours < 24*365 {
-		return hours / 24
+		return fmt.Sprintf("%dd", hours/24)
 	}
-	return int(d.Hours() / 24 / 365)
-}
-
-//but THIS not
-func timeDurString(d time.Duration) string {
-	if seconds := int(d.Seconds()); seconds < -1 {
-		return "<invalid>"
-	} else if seconds < 0 {
-		return "0s"
-	} else if seconds < 60 {
-		return string(seconds) + "s"
-	} else if minutes := int(d.Minutes()); minutes < 60 {
-		return string(minutes) + "m"
-	} else if hours := int(d.Hours()); hours < 24 {
-		return string(hours) + "h"
-	} else if hours < 24*365 {
-		return string(hours/24) + "d"
-	}
-	return string(int(d.Hours() / 24 / 365))
+	return fmt.Sprintf("%dy", int(d.Hours()/24/365))
 }
