@@ -377,7 +377,7 @@ func (f *petFixture) assertHasServiceKey(key service.Key) {
 	}
 
 	for _, proc := range procs {
-		if proc.ServiceName == key.Name && proc.ServiceTier == key.Tier {
+		if proc.ServiceKey() == key {
 			return
 		}
 	}

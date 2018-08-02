@@ -18,6 +18,7 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "just print recommended commands, don't run them")
 	RootCmd.AddCommand(ListCmd)
 	RootCmd.AddCommand(DownCmd)
+	initLogsCmd()
 	initUpCmd()
 }
 

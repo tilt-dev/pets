@@ -77,7 +77,7 @@ func (s *PetSchool) healthyServices() (map[service.Key]proc.PetsProc, error) {
 			continue
 		}
 
-		key := service.NewKey(p.ServiceName, p.ServiceTier)
+		key := p.ServiceKey()
 		result[key] = p
 	}
 
