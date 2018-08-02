@@ -117,6 +117,7 @@ func (p *Petsitter) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tup
 	if err := p.Runner.RunWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
 		return nil, err
 	}
+	fmt.Fprintf(p.Stderr, "You ran %s \n", cmdV)
 
 	return skylark.None, nil
 }
@@ -146,6 +147,7 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 	if process, err = p.Runner.StartWithStdLogs(cmdArgs, cwd, key); err != nil {
 		return nil, err
 	}
+	fmt.Fprintf(p.Stderr, "You started %s \n", cmdV)
 	return petsProcToSkylarkValue(process.Proc), nil
 }
 
@@ -324,6 +326,8 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 		return nil, err
 	}
 
+	key := p.serviceKey(t)
+	fmt.Fprintf(p.Stderr, "The service %s is now running. \n", key)
 	return petsProcToSkylarkValue(pr), nil
 }
 
