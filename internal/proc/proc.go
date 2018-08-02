@@ -56,6 +56,10 @@ func (p PetsProc) WithServiceKey(key service.Key) PetsProc {
 	return p
 }
 
+func (p PetsProc) ServiceKey() service.Key {
+	return service.NewKey(p.ServiceName, p.ServiceTier)
+}
+
 type PetsCommand struct {
 	Proc PetsProc
 	Cmd  *exec.Cmd
