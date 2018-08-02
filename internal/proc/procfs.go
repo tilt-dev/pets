@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 
+	"github.com/windmilleng/pets/internal/service"
 	"github.com/windmilleng/wmclient/pkg/dirs"
 )
 
+const petsDir = "pets"
 const procPath = "pets/proc.json"
 
 // Saves state about the currently running processes to the filesystem.
@@ -37,6 +40,41 @@ func NewProcFSWithDir(wmDir *dirs.WindmillDir) (ProcFS, error) {
 		return ProcFS{}, fmt.Errorf("NewProcFS: %v", err)
 	}
 	return fs, nil
+}
+
+// Open a log file for writing. Truncate any existing contents of the file.
+func (f ProcFS) OpenFreshLogFile(key service.Key) (*os.File, error) {
+	file := f.logFilePath(key)
+	return f.wmDir.OpenFile(file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(0644))
+}
+
+// Returns the empty string if the log file doesn't exist.
+func (f ProcFS) ReadLogFile(key service.Key) (string, error) {
+	file := f.logFilePath(key)
+	contents, err := f.wmDir.ReadFile(file)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil
+		}
+		return "", err
+	}
+	return contents, nil
+}
+
+func (f ProcFS) logFilePath(key service.Key) string {
+	name := string(key.Name)
+	tier := string(key.Tier)
+
+	// Creating log files in the global service scope is unusual, but
+	// we should at least do something reasonable.
+	if name == "" {
+		name = "global"
+	}
+	if tier == "" {
+		tier = "global"
+	}
+
+	return filepath.Join(petsDir, tier, fmt.Sprintf("%s.log", name))
 }
 
 // Add a proc to the JSON file
