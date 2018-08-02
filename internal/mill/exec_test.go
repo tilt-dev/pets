@@ -108,15 +108,19 @@ func TestStartLogs(t *testing.T) {
 		t.Errorf("Expected 'meow'. Actual: %s", contents)
 	}
 }
+
 func TestStartLogsInService(t *testing.T) {
 	f := newPetFixture(t)
 	defer f.tearDown()
 
 	petsitter := f.petsitter
 	file := filepath.Join(f.dir, "Petsfile")
+
+	// nc -lk -p PORT
+	// is unix-speak for "Create the dumbest possible server that just listens on PORT"
 	ioutil.WriteFile(file, []byte(`
 def start_local():
-  return service(start("echo meow"), "localhost", 8080)
+  return service(start("echo meow; nc -lk -p 28234"), "localhost", 28234)
 
 register("frontend", "local", start_local)`), os.FileMode(0777))
 	err := petsitter.ExecFile(file)
@@ -292,7 +296,7 @@ func TestRegister(t *testing.T) {
 	file := filepath.Join(f.dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`
 def start_local():
-  result = service(start("sleep 100"), "localhost", 8080)
+  result = service(start("nc -lk -p 28234"), "localhost", 28234)
   print(result["host"])
   return result
 
@@ -314,8 +318,8 @@ register("blorg-frontend", "local", start_local)
 	f.assertHasServiceKey(key)
 
 	out := f.stdout.String()
-	if !strings.Contains(out, "localhost:8080") {
-		t.Errorf("Expected 'localhost:8080'. Actual: %s", out)
+	if !strings.Contains(out, "localhost:28234") {
+		t.Errorf("Expected 'localhost:28234'. Actual: %s", out)
 	}
 }
 
@@ -326,7 +330,7 @@ func TestRegisterTwice(t *testing.T) {
 	file := filepath.Join(f.dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`
 def start_local():
-  return service(start("sleep 100"), "localhost", 8080)
+  return service(start("nc -l -p 8080"), "localhost", 8080)
 
 register("blorg-frontend", "local", start_local)
 register("blorg-frontend", "local", start_local)
@@ -337,6 +341,31 @@ register("blorg-frontend", "local", start_local)
 		!strings.Contains(err.Error(), "Duplicate provider") ||
 		!strings.Contains(err.Error(), fmt.Sprintf("First:  %s/Petsfile:5", f.dir)) {
 		t.Errorf("Expected duplicate provider error. Actual: %v", err)
+	}
+}
+
+func TestHealthCheck(t *testing.T) {
+	f := newPetFixture(t)
+	petsitter := f.petsitter
+
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`
+def start_local():
+  return service(start("echo meow"), "localhost", 21345)
+
+register("blorg-frontend", "local", start_local)
+`), os.FileMode(0777))
+
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	school := f.petsitter.School
+	key := service.NewKey("blorg-frontend", "local")
+	_, err = school.UpByKey(key)
+	if err == nil || !strings.Contains(err.Error(), "Process died without opening a network connection") {
+		t.Errorf("Expected health check error. Actual: %v", err)
 	}
 }
 

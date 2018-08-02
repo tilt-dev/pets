@@ -1,6 +1,8 @@
 package proc
 
 import (
+	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"syscall"
@@ -29,6 +31,10 @@ type PetsProc struct {
 	// The name+tier of the service that this process exposes
 	ServiceName service.Name `json:",omitempty"`
 	ServiceTier service.Tier `json:",omitempty"`
+}
+
+func (p PetsProc) Host() string {
+	return net.JoinHostPort(p.Hostname, fmt.Sprintf("%d", p.Port))
 }
 
 // Creates a new PetsProc that we know is listening on the given host and port.

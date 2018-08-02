@@ -2,7 +2,7 @@
 
 .PHONY: test
 test:
-	go test -timeout 15s ./...
+	go test -timeout 20s ./...
 
 .PHONY: lint
 lint:
