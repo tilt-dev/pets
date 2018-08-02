@@ -29,7 +29,7 @@ var ListCmd = &cobra.Command{
 
 		fmt.Printf("%-30s%-30s\n", "Name", "Age")
 		for _, p := range procs {
-			el := timeDur(p.TimeSince().Truncate(time.Minute))
+			el := timeDur(p.TimeSince().Truncate(time.Second))
 			fmt.Printf("%-30s%-30s\n", p.DisplayName, el)
 		}
 	},
