@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 
 	"github.com/windmilleng/pets/internal/service"
 	"github.com/windmilleng/wmclient/pkg/dirs"
@@ -129,6 +130,26 @@ func (f ProcFS) RemoveDeadProcs() error {
 	return f.filterProcs(func(p PetsProc) bool {
 		return !isAlive(p.Pid)
 	})
+}
+
+// Kill all the procs in the JSON file with a sigkill
+// This is really only suitable for testing. 'pets down' uses a more graceful
+// sigint with output.
+func (f ProcFS) KillAllForTesting() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	procs, err := f.procsFromFS()
+	if err != nil {
+		return err
+	}
+
+	for _, p := range procs {
+		pgid := -p.Pid
+		syscall.Kill(pgid, syscall.SIGKILL)
+	}
+
+	return f.procsToFS(nil)
 }
 
 // Remove a proc from the JSON file if it matches the filter.

@@ -17,7 +17,7 @@ func TestProcFS(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs := f.newProcFS()
+	procfs := f.procfs
 	proc := PetsProc{Pid: 12345}
 	err := procfs.AddProc(proc)
 	if err != nil {
@@ -39,7 +39,7 @@ func TestProcFSDoubleAdd(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs := f.newProcFS()
+	procfs := f.procfs
 	proc := PetsProc{Pid: 12345}
 	err := procfs.AddProc(proc)
 	if err != nil {
@@ -56,7 +56,7 @@ func TestProcFSHost(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs := f.newProcFS()
+	procfs := f.procfs
 	proc := PetsProc{Pid: 12345}
 	err := procfs.AddProc(proc)
 	if err != nil {
@@ -74,7 +74,7 @@ func TestProcFSKey(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs := f.newProcFS()
+	procfs := f.procfs
 	proc := PetsProc{Pid: 12345}
 	err := procfs.AddProc(proc)
 	if err != nil {
@@ -92,7 +92,7 @@ func TestProcFSRemoveDead(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs := f.newProcFS()
+	procfs := f.procfs
 	cmd1 := exec.Command("echo", "1")
 	cmd1.Start()
 
@@ -121,29 +121,28 @@ func TestProcFSRemoveDead(t *testing.T) {
 }
 
 type procFixture struct {
-	t   *testing.T
-	dir string
+	t      *testing.T
+	dir    string
+	procfs ProcFS
 }
 
 func newProcFixture(t *testing.T) *procFixture {
 	dir, _ := ioutil.TempDir("", t.Name())
+	wmDir := dirs.NewWindmillDirAt(dir)
+	procfs, err := NewProcFSWithDir(wmDir)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return &procFixture{
-		t:   t,
-		dir: dir,
+		t:      t,
+		dir:    dir,
+		procfs: procfs,
 	}
 }
 
 func (f *procFixture) tearDown() {
+	f.procfs.KillAllForTesting()
 	os.RemoveAll(f.dir)
-}
-
-func (f *procFixture) newProcFS() ProcFS {
-	wmDir := dirs.NewWindmillDirAt(f.dir)
-	procfs, err := NewProcFSWithDir(wmDir)
-	if err != nil {
-		f.t.Fatal(err)
-	}
-	return procfs
 }
 
 func (f *procFixture) procFile() string {

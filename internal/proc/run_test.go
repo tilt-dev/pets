@@ -10,7 +10,7 @@ func TestRun(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs := f.newProcFS()
+	procfs := f.procfs
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cwd, _ := os.Getwd()
@@ -31,7 +31,7 @@ func TestStartAddsToProcFS(t *testing.T) {
 	f := newProcFixture(t)
 	defer f.tearDown()
 
-	procfs := f.newProcFS()
+	procfs := f.procfs
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cwd, _ := os.Getwd()

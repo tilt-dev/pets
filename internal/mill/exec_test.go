@@ -386,5 +386,6 @@ func (f *petFixture) assertHasServiceKey(key service.Key) {
 }
 
 func (f *petFixture) tearDown() {
+	f.procfs.KillAllForTesting()
 	os.RemoveAll(f.dir)
 }

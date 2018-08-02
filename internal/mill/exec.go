@@ -147,6 +147,14 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 	if process, err = p.Runner.StartWithStdLogs(cmdArgs, cwd, key); err != nil {
 		return nil, err
 	}
+
+	// Release the process because we're not waiting on it,
+	// and we don't want it to become a zombie when it dies.
+	err = process.Cmd.Process.Release()
+	if err != nil {
+		return nil, err
+	}
+
 	fmt.Fprintf(p.Stderr, "You started %s \n", cmdV)
 	return petsProcToSkylarkValue(process.Proc), nil
 }
