@@ -113,11 +113,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:56345a4c69725f9cdef3a023886fd2d25539c04a9471701ed0ec25914fc5cd01"
+  digest = "1:fc3627a483e01a33b432479ec262ab39617405681d5bcc202ed264ba3babdcef"
   name = "github.com/windmilleng/wmclient"
-  packages = ["pkg/dirs"]
+  packages = [
+    "pkg/analytics",
+    "pkg/dirs",
+  ]
   pruneopts = "UT"
-  revision = "77451f3750e7ea1b188c63d0472460dc092a8f32"
+  revision = "f6b39cbcf57d4992b2407977e1fb956b98559614"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -127,6 +130,7 @@
     "github.com/google/skylark/syntax",
     "github.com/heptiolabs/healthcheck",
     "github.com/spf13/cobra",
+    "github.com/windmilleng/wmclient/pkg/analytics",
     "github.com/windmilleng/wmclient/pkg/dirs",
   ]
   solver-name = "gps-cdcl"

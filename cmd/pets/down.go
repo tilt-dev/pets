@@ -3,6 +3,7 @@ package pets
 import (
 	"fmt"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/windmilleng/pets/internal/proc"
@@ -11,6 +12,9 @@ import (
 var DownCmd = &cobra.Command{
 	Use: "down",
 	Run: func(cms *cobra.Command, args []string) {
+		analyticsService.Incr("cmd.down", nil)
+		defer analyticsService.Flush(time.Second)
+
 		procfs, err := proc.NewProcFS()
 		if err != nil {
 			fatal(err)
