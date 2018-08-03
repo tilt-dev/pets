@@ -86,8 +86,8 @@ func TestDryRun(t *testing.T) {
 		t.Errorf("Expected 'meow'. Actual: %s", out)
 	}
 	er := stderr.String()
-	if !strings.Contains(er, "dry") {
-		t.Errorf("Expected 'meow'. Actual: %s", f.stderr.String())
+	if !strings.Contains(er, "meow") {
+		t.Errorf("Expected 'pets ran \"echo meow\"'. Actual: %s", f.stderr.String())
 	}
 }
 
