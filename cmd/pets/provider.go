@@ -15,5 +15,5 @@ func newPetsitter() (*mill.Petsitter, error) {
 	}
 	runner := proc.NewRunner(procfs)
 	school := school.NewPetSchool(procfs)
-	return mill.NewPetsitter(os.Stdout, os.Stderr, runner, procfs, school), nil
+	return mill.NewPetsitter(os.Stdout, os.Stderr, runner, procfs, school, dryRun), nil
 }

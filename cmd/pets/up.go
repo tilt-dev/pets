@@ -61,8 +61,6 @@ func runUpCmd(cmd *cobra.Command, args []string) {
 			fatal(err)
 		}
 	}
-	cwd, _ := os.Getwd()
-	fmt.Printf("Pets is running in %s\n", cwd)
 }
 
 func initUpCmd() {
