@@ -34,13 +34,21 @@ type PetSchool struct {
 
 	// Each ProviderSpec is mapped by its output name.
 	providers map[service.Key]ProviderSpec
+
+	// Overrides set on the command-line
+	overrides map[service.Name]service.Tier
 }
 
 func NewPetSchool(procfs proc.ProcFS) *PetSchool {
 	return &PetSchool{
 		procfs:    procfs,
 		providers: make(map[service.Key]ProviderSpec),
+		overrides: make(map[service.Name]service.Tier),
 	}
+}
+
+func (s *PetSchool) AddOverride(name service.Name, tier service.Tier) {
+	s.overrides[name] = tier
 }
 
 func (s *PetSchool) AddProvider(key service.Key, provider Provider, deps []service.Name, position string) error {
@@ -125,6 +133,11 @@ func (s *PetSchool) UpByTier(tier service.Tier) ([]proc.PetsProc, error) {
 }
 
 func (s *PetSchool) up(key service.Key, petsUp map[service.Key]proc.PetsProc) (proc.PetsProc, error) {
+	overrideTier, hasOverride := s.overrides[key.Name]
+	if hasOverride {
+		key.Tier = overrideTier
+	}
+
 	alreadyRunning, ok := petsUp[key]
 	if ok {
 		return alreadyRunning, nil
@@ -138,10 +151,6 @@ func (s *PetSchool) up(key service.Key, petsUp map[service.Key]proc.PetsProc) (p
 	// Make sure all the dependencies are up. For simplicity, we bring them up in serial.
 	inputProcs := make([]proc.PetsProc, len(providerSpec.inputNames))
 	for i, input := range providerSpec.inputNames {
-		// Right now, we assume that if {Name: frontend, Tier: local} depends on "backend",
-		// then it should bring up {Name: backend, Tier: local}. We need to think
-		// more about how users specify service graphs in PETS, either as command-line
-		// overrides or as Guice-style modules.
 		inputKey := service.Key{
 			Name: input,
 			Tier: key.Tier,

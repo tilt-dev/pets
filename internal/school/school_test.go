@@ -13,6 +13,7 @@ import (
 
 // Create a bunch of fake test data
 const local = service.Tier("local")
+const k8s = service.Tier("k8s")
 
 const blorgFrontend = service.Name("blorg-frontend")
 const blorgBackend = service.Name("blorg-backend")
@@ -21,6 +22,10 @@ const cockroach = service.Name("cockroach")
 
 func localKey(name service.Name) service.Key {
 	return service.NewKey(name, local)
+}
+
+func k8sKey(name service.Name) service.Key {
+	return service.NewKey(name, k8s)
 }
 
 // Test a server topology with one service, blorg-frontend
@@ -153,6 +158,52 @@ func TestMissingDependency(t *testing.T) {
 	}
 }
 
+func TestOverrideFrontend(t *testing.T) {
+	f := newSchoolFixture(t)
+	defer f.tearDown()
+
+	f.setupTwoServersTwoProviders()
+	f.school.AddOverride(blorgFrontend, k8s)
+	_, err := f.school.UpByKey(localKey(blorgFrontend))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	services, err := f.school.healthyServices()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, hasFrontend := services[k8sKey(blorgFrontend)]
+	_, hasBackend := services[k8sKey(blorgBackend)]
+	if len(services) != 2 || !hasFrontend || !hasBackend {
+		t.Errorf("Unexpected services: %+v", services)
+	}
+}
+
+func TestOverrideBackend(t *testing.T) {
+	f := newSchoolFixture(t)
+	defer f.tearDown()
+
+	f.setupTwoServersTwoProviders()
+	f.school.AddOverride(blorgBackend, k8s)
+	_, err := f.school.UpByKey(localKey(blorgFrontend))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	services, err := f.school.healthyServices()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, hasFrontend := services[localKey(blorgFrontend)]
+	_, hasBackend := services[k8sKey(blorgBackend)]
+	if len(services) != 2 || !hasFrontend || !hasBackend {
+		t.Errorf("Unexpected services: %+v", services)
+	}
+}
+
 type schoolFixture struct {
 	t      *testing.T
 	dir    string
@@ -192,6 +243,28 @@ func (f *schoolFixture) setupDiamond() {
 	}
 
 	err = f.school.AddProvider(localKey(cockroach), f.makeProvider(4), nil, "")
+	if err != nil {
+		f.t.Fatal(err)
+	}
+}
+
+func (f *schoolFixture) setupTwoServersTwoProviders() {
+	err := f.school.AddProvider(localKey(blorgFrontend), f.makeProvider(1), []service.Name{blorgBackend}, "")
+	if err != nil {
+		f.t.Fatal(err)
+	}
+
+	err = f.school.AddProvider(localKey(blorgBackend), f.makeProvider(2), nil, "")
+	if err != nil {
+		f.t.Fatal(err)
+	}
+
+	err = f.school.AddProvider(k8sKey(blorgFrontend), f.makeProvider(3), []service.Name{blorgBackend}, "")
+	if err != nil {
+		f.t.Fatal(err)
+	}
+
+	err = f.school.AddProvider(k8sKey(blorgBackend), f.makeProvider(4), nil, "")
 	if err != nil {
 		f.t.Fatal(err)
 	}
