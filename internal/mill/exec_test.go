@@ -355,6 +355,7 @@ func newPetFixture(t *testing.T) *petFixture {
 	dir, _ := ioutil.TempDir("", t.Name())
 	wmDir := dirs.NewWindmillDirAt(dir)
 	procfs, err := proc.NewProcFSWithDir(wmDir)
+	drymode := false
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -362,7 +363,7 @@ func newPetFixture(t *testing.T) *petFixture {
 	school := school.NewPetSchool(procfs)
 	return &petFixture{
 		t:         t,
-		petsitter: NewPetsitter(stdout, stderr, runner, procfs, school),
+		petsitter: NewPetsitter(stdout, stderr, runner, procfs, school, drymode),
 		stdout:    stdout,
 		stderr:    stderr,
 		dir:       dir,
