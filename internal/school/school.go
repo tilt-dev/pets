@@ -47,8 +47,14 @@ func NewPetSchool(procfs proc.ProcFS) *PetSchool {
 	}
 }
 
-func (s *PetSchool) AddOverride(name service.Name, tier service.Tier) {
+func (s *PetSchool) AddOverride(name service.Name, tier service.Tier) error {
+	key := service.NewKey(name, tier)
+	_, hasProvider := s.providers[key]
+	if !hasProvider {
+		return fmt.Errorf("Could not find provider for service %q, tier %q", name, tier)
+	}
 	s.overrides[name] = tier
+	return nil
 }
 
 func (s *PetSchool) AddProvider(key service.Key, provider Provider, deps []service.Name, position string) error {

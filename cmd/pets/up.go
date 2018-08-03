@@ -3,6 +3,7 @@ package pets
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/windmilleng/pets/internal/mill"
@@ -10,6 +11,7 @@ import (
 )
 
 var upTier string
+var upOverrides []string
 
 var UpCmd = &cobra.Command{
 	Use:   "up",
@@ -35,6 +37,17 @@ func runUpCmd(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	overrideMap := make(map[service.Name]service.Tier)
+	for _, override := range upOverrides {
+		parts := strings.Split(override, "=")
+		if len(parts) != 2 {
+			fmt.Printf("--with flag should have format 'service=tier'. Actual value: %s\n", override)
+			os.Exit(1)
+		}
+
+		overrideMap[service.Name(parts[0])] = service.Tier(parts[1])
+	}
+
 	file := mill.GetFilePath()
 	petsitter, err := newPetsitter()
 	if err != nil {
@@ -47,6 +60,14 @@ func runUpCmd(cmd *cobra.Command, args []string) {
 	}
 
 	school := petsitter.School
+
+	for name, tier := range overrideMap {
+		err = school.AddOverride(name, tier)
+		if err != nil {
+			fatal(err)
+		}
+	}
+
 	if len(args) == 1 {
 		_, err = school.UpByKey(service.Key{
 			Name: service.Name(args[0]),
@@ -69,4 +90,5 @@ func initUpCmd() {
 	RootCmd.AddCommand(UpCmd)
 	UpCmd.Run = runUpCmd
 	UpCmd.Flags().StringVar(&upTier, "tier", "local", "The tier of servers to start up. Defaults to 'local'")
+	UpCmd.Flags().StringSliceVar(&upOverrides, "with", nil, "Override servers in the server graph. Example: --with=backend=k8s")
 }
