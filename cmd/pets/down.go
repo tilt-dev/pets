@@ -10,7 +10,8 @@ import (
 )
 
 var DownCmd = &cobra.Command{
-	Use: "down",
+	Use:   "down",
+	Short: "Kill all processes started by pets",
 	Run: func(cms *cobra.Command, args []string) {
 		analyticsService.Incr("cmd.down", nil)
 		defer analyticsService.Flush(time.Second)
