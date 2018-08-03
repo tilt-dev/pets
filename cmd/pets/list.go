@@ -12,7 +12,6 @@ var ListCmd = &cobra.Command{
 	Use: "list",
 	Run: func(cms *cobra.Command, args []string) {
 		procfs, err := proc.NewProcFS()
-
 		if err != nil {
 			fatal(err)
 		}

@@ -68,6 +68,29 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestDryRun(t *testing.T) {
+	f := newPetFixture(t)
+	f.petsitter.DryMode = true
+	defer f.tearDown()
+
+	petsitter, stdout, stderr := f.petsitter, f.stdout, f.stderr
+	file := filepath.Join(f.dir, "Petsfile")
+	ioutil.WriteFile(file, []byte(`run("echo meow")`), os.FileMode(0777))
+	err := petsitter.ExecFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := stdout.String()
+	if out != "" {
+		t.Errorf("Expected 'meow'. Actual: %s", out)
+	}
+	er := stderr.String()
+	if !strings.Contains(er, "meow") {
+		t.Errorf("Expected 'pets ran \"echo meow\"'. Actual: %s", f.stderr.String())
+	}
+}
+
 func TestStart(t *testing.T) {
 	f := newPetFixture(t)
 	defer f.tearDown()
@@ -384,6 +407,7 @@ func newPetFixture(t *testing.T) *petFixture {
 	dir, _ := ioutil.TempDir("", t.Name())
 	wmDir := dirs.NewWindmillDirAt(dir)
 	procfs, err := proc.NewProcFSWithDir(wmDir)
+	drymode := false
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -391,7 +415,7 @@ func newPetFixture(t *testing.T) *petFixture {
 	school := school.NewPetSchool(procfs)
 	return &petFixture{
 		t:         t,
-		petsitter: NewPetsitter(stdout, stderr, runner, procfs, school),
+		petsitter: NewPetsitter(stdout, stderr, runner, procfs, school, drymode),
 		stdout:    stdout,
 		stderr:    stderr,
 		dir:       dir,

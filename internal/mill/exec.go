@@ -34,29 +34,34 @@ type scriptResult struct {
 }
 
 type Petsitter struct {
-	Stdout io.Writer
-	Stderr io.Writer
-	Runner proc.Runner
-	Procfs proc.ProcFS
-	School *school.PetSchool
+	Stdout  io.Writer
+	Stderr  io.Writer
+	Runner  proc.Runner
+	Procfs  proc.ProcFS
+	School  *school.PetSchool
+	DryMode bool
 
 	// A script file can only be loaded once.
 	resultsByFile map[string]scriptResult
 }
 
-func NewPetsitter(stdout, stderr io.Writer, runner proc.Runner, procfs proc.ProcFS, school *school.PetSchool) *Petsitter {
+func NewPetsitter(stdout, stderr io.Writer, runner proc.Runner, procfs proc.ProcFS, school *school.PetSchool, drymode bool) *Petsitter {
 	return &Petsitter{
 		Stdout:        stdout,
 		Stderr:        stderr,
 		Runner:        runner,
 		Procfs:        procfs,
 		School:        school,
+		DryMode:       drymode,
 		resultsByFile: make(map[string]scriptResult),
 	}
 }
 
 // ExecFile takes a Petsfile and parses it using the Skylark interpreter
 func (p *Petsitter) ExecFile(file string) error {
+	if p.DryMode {
+		fmt.Println("🔔 🔔 You are running pets in dry-run mode! None of these commands will execute. 🔔 🔔 \n ")
+	}
 	if result, ok := p.resultsByFile[file]; ok {
 		if !result.done {
 			return fmt.Errorf("Pets already executing file: %s", file)
@@ -110,16 +115,20 @@ func (p *Petsitter) run(t *skylark.Thread, fn *skylark.Builtin, args skylark.Tup
 	if err != nil {
 		return nil, err
 	}
+	fmt.Fprintf(p.Stderr, "Pets ran %s \n", cmdV)
 
 	cwd, err := p.wd(t)
 	if err != nil {
 		return nil, err
 	}
 
+	if p.DryMode {
+		// fmt.Println("Pets is running in dry mode.")
+		return skylark.None, nil
+	}
 	if err := p.Runner.RunWithIO(cmdArgs, cwd, p.Stdout, p.Stderr); err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(p.Stderr, "You ran %s \n", cmdV)
 
 	return skylark.None, nil
 }
@@ -146,9 +155,16 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 
 	key := p.serviceKey(t)
 
+	if p.DryMode {
+		fmt.Fprintf(p.Stderr, "Pets ran %s in dry run mode \n", cmdV)
+		return petsProcToSkylarkValue(proc.PetsProc{}), nil
+	}
+
 	if process, err = p.Runner.StartWithStdLogs(cmdArgs, cwd, key); err != nil {
 		return nil, err
 	}
+
+	fmt.Fprintf(p.Stderr, "Pets ran %s \n", cmdV)
 
 	go func() {
 		// In the background, wait on the process. This tells the OS that it's
@@ -159,7 +175,6 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 		process.Cmd.Process.Wait()
 	}()
 
-	fmt.Fprintf(p.Stderr, "You started %s \n", cmdV)
 	return petsProcToSkylarkValue(process.Proc), nil
 }
 
@@ -327,12 +342,19 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 		return nil, err
 	}
 
+	key := p.serviceKey(t)
+
+	if p.DryMode {
+		return petsProcToSkylarkValue(proc.PetsProc{}), nil
+	}
+
 	pr, err := p.skylarkValueToPetsProc(server)
 	if err != nil {
 		return nil, err
 	}
 
 	pr = pr.WithExposedHost(host, port)
+
 	err = p.Procfs.ModifyProc(pr)
 	if err != nil {
 		return nil, err
@@ -343,7 +365,6 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 		return nil, err
 	}
 
-	key := p.serviceKey(t)
 	fmt.Fprintf(p.Stderr, "The service %s is now running. \n", key)
 
 	return petsProcToSkylarkValue(pr), nil
@@ -410,6 +431,9 @@ func (p *Petsitter) wd(t *skylark.Thread) (string, error) {
 }
 
 func (p *Petsitter) skylarkValueToPetsProc(v skylark.Value) (proc.PetsProc, error) {
+	if p.DryMode {
+		return proc.PetsProc{}, nil
+	}
 	dict, ok := v.(*skylark.Dict)
 	if !ok {
 		return proc.PetsProc{}, fmt.Errorf("Not a valid pets process: %s", v)
@@ -450,15 +474,15 @@ func petsProcToSkylarkValue(p proc.PetsProc) skylark.Value {
 	pid := skylark.String("pid")
 	proc := skylark.MakeInt(pr)
 	d.Set(pid, proc)
-	if p.Hostname != "" {
-		d.Set(skylark.String("hostname"), skylark.String(p.Hostname))
-	}
-	if p.Port != 0 {
-		d.Set(skylark.String("port"), skylark.MakeInt(p.Port))
-	}
-	if p.Hostname != "" && p.Port != 0 {
-		d.Set(skylark.String("host"), skylark.String(p.Host()))
-	}
+	// if p.Hostname != "" {
+	d.Set(skylark.String("hostname"), skylark.String(p.Hostname))
+	// }
+	// if p.Port != 0 {
+	d.Set(skylark.String("port"), skylark.MakeInt(p.Port))
+	// }
+	// if p.Hostname != "" && p.Port != 0 {
+	d.Set(skylark.String("host"), skylark.String(p.Host()))
+	// }
 	return d
 }
 
