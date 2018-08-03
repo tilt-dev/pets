@@ -69,10 +69,11 @@ func TestRun(t *testing.T) {
 }
 
 func TestDryRun(t *testing.T) {
-	f := newPetFixtureDryRun(t)
+	f := newPetFixture(t)
+	f.petsitter.DryMode = true
 	defer f.tearDown()
 
-	petsitter, stdout := f.petsitter, f.stdout
+	petsitter, stdout, stderr := f.petsitter, f.stdout, f.stderr
 	file := filepath.Join(f.dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`run("echo meow")`), os.FileMode(0777))
 	err := petsitter.ExecFile(file)
@@ -83,6 +84,10 @@ func TestDryRun(t *testing.T) {
 	out := stdout.String()
 	if out != "" {
 		t.Errorf("Expected 'meow'. Actual: %s", out)
+	}
+	er := stderr.String()
+	if !strings.Contains(er, "dry") {
+		t.Errorf("Expected 'meow'. Actual: %s", f.stderr.String())
 	}
 }
 
@@ -403,28 +408,6 @@ func newPetFixture(t *testing.T) *petFixture {
 	wmDir := dirs.NewWindmillDirAt(dir)
 	procfs, err := proc.NewProcFSWithDir(wmDir)
 	drymode := false
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := proc.NewRunner(procfs)
-	school := school.NewPetSchool(procfs)
-	return &petFixture{
-		t:         t,
-		petsitter: NewPetsitter(stdout, stderr, runner, procfs, school, drymode),
-		stdout:    stdout,
-		stderr:    stderr,
-		dir:       dir,
-		procfs:    procfs,
-	}
-}
-
-func newPetFixtureDryRun(t *testing.T) *petFixture {
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-	dir, _ := ioutil.TempDir("", t.Name())
-	wmDir := dirs.NewWindmillDirAt(dir)
-	procfs, err := proc.NewProcFSWithDir(wmDir)
-	drymode := true
 	if err != nil {
 		t.Fatal(err)
 	}

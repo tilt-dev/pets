@@ -166,12 +166,6 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 
 	fmt.Fprintf(p.Stderr, "Pets ran %s \n", cmdV)
 
-	// Release the process because we're not waiting on it,
-	// and we don't want it to become a zombie when it dies.
-	err = process.Cmd.Process.Release()
-	if err != nil {
-		return nil, err
-	}
 	go func() {
 		// In the background, wait on the process. This tells the OS that it's
 		// OK to clean up the defunct process when it dies.
