@@ -25,7 +25,6 @@ func NewRunner(fs ProcFS) Runner {
 //
 // args: The command to run.
 // cwd: The current working directory.
-// Here: check if dry-run
 func (r Runner) Run(args []string, cwd string) error {
 	return r.RunWithIO(args, cwd, os.Stdout, os.Stderr)
 }
