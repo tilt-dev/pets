@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	if err := pets.RootCmd.Execute(); err != nil {
+	if err := pets.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

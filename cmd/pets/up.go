@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/windmilleng/pets/internal/mill"
@@ -47,6 +48,9 @@ func runUpCmd(cmd *cobra.Command, args []string) {
 
 		overrideMap[service.Name(parts[0])] = service.Tier(parts[1])
 	}
+
+	analyticsService.Incr("cmd.up", nil)
+	defer analyticsService.Flush(time.Second)
 
 	file := mill.GetFilePath()
 	petsitter, err := newPetsitter()
