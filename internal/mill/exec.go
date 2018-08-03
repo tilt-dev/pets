@@ -366,15 +366,11 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 		return nil, err
 	}
 
-<<<<<<< HEAD
-=======
 	err = p.waitOnHealthCheck(t, pr)
 	if err != nil {
 		return nil, err
 	}
 
-	key := p.serviceKey(t)
->>>>>>> bf086a80c381cdca088a7b157093d9f4ca705af9
 	fmt.Fprintf(p.Stderr, "The service %s is now running. \n", key)
 
 	return petsProcToSkylarkValue(pr), nil
@@ -484,7 +480,6 @@ func petsProcToSkylarkValue(p proc.PetsProc) skylark.Value {
 	pid := skylark.String("pid")
 	proc := skylark.MakeInt(pr)
 	d.Set(pid, proc)
-<<<<<<< HEAD
 	// if p.Hostname != "" {
 	d.Set(skylark.String("hostname"), skylark.String(p.Hostname))
 	// }
@@ -492,20 +487,8 @@ func petsProcToSkylarkValue(p proc.PetsProc) skylark.Value {
 	d.Set(skylark.String("port"), skylark.MakeInt(p.Port))
 	// }
 	// if p.Hostname != "" && p.Port != 0 {
-	host := net.JoinHostPort(p.Hostname, fmt.Sprintf("%d", p.Port))
-	d.Set(skylark.String("host"), skylark.String(host))
+	d.Set(skylark.String("host"), skylark.String(p.Host()))
 	// }
-=======
-	if p.Hostname != "" {
-		d.Set(skylark.String("hostname"), skylark.String(p.Hostname))
-	}
-	if p.Port != 0 {
-		d.Set(skylark.String("port"), skylark.MakeInt(p.Port))
-	}
-	if p.Hostname != "" && p.Port != 0 {
-		d.Set(skylark.String("host"), skylark.String(p.Host()))
-	}
->>>>>>> bf086a80c381cdca088a7b157093d9f4ca705af9
 	return d
 }
 
