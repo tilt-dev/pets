@@ -1,17 +1,19 @@
 package mill
 
 import (
+	"context"
 	"fmt"
 	"go/build"
 	"io"
-	"net"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	"github.com/google/skylark"
 	"github.com/google/skylark/syntax"
+	"github.com/windmilleng/pets/internal/health"
 	"github.com/windmilleng/pets/internal/loader"
 	"github.com/windmilleng/pets/internal/proc"
 	"github.com/windmilleng/pets/internal/school"
@@ -170,6 +172,14 @@ func (p *Petsitter) start(t *skylark.Thread, fn *skylark.Builtin, args skylark.T
 	if err != nil {
 		return nil, err
 	}
+	go func() {
+		// In the background, wait on the process. This tells the OS that it's
+		// OK to clean up the defunct process when it dies.
+		//
+		// Without this, the process will appear to be alive until the parent
+		// process dies, so health checks won't work right.
+		process.Cmd.Process.Wait()
+	}()
 
 	return petsProcToSkylarkValue(process.Proc), nil
 }
@@ -356,8 +366,50 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 		return nil, err
 	}
 
+<<<<<<< HEAD
+=======
+	err = p.waitOnHealthCheck(t, pr)
+	if err != nil {
+		return nil, err
+	}
+
+	key := p.serviceKey(t)
+>>>>>>> bf086a80c381cdca088a7b157093d9f4ca705af9
 	fmt.Fprintf(p.Stderr, "The service %s is now running. \n", key)
+
 	return petsProcToSkylarkValue(pr), nil
+}
+
+// service() always does a TCP check
+// We might want to provide hooks for user-specified checks,
+// or for skipping the TCP check.
+func (p *Petsitter) waitOnHealthCheck(t *skylark.Thread, pr proc.PetsProc) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	waitingCh := make(chan bool)
+
+	// If the TCP health check doesn't pass in 1 second, print a message
+	// explaining why we're waiting
+	key := p.serviceKey(t)
+	go func() {
+		select {
+		case <-time.After(time.Second):
+			fmt.Fprintf(p.Stderr, "Waiting on %s for health check at %s...\n", key, pr.Host())
+		case <-ctx.Done():
+		}
+		close(waitingCh)
+	}()
+
+	err := health.WaitForTCP(pr, 100*time.Millisecond)
+	cancel()
+
+	// Wait until the goroutine finishes to avoid weird race conditions
+	<-waitingCh
+
+	if err != nil {
+		return fmt.Errorf("Health check (%s, %s) failed: %v", key, pr.Host(), err)
+	}
+
+	return nil
 }
 
 // All Pets threads should have a service.Key attached, even if it's an empty one.
@@ -432,6 +484,7 @@ func petsProcToSkylarkValue(p proc.PetsProc) skylark.Value {
 	pid := skylark.String("pid")
 	proc := skylark.MakeInt(pr)
 	d.Set(pid, proc)
+<<<<<<< HEAD
 	// if p.Hostname != "" {
 	d.Set(skylark.String("hostname"), skylark.String(p.Hostname))
 	// }
@@ -442,6 +495,17 @@ func petsProcToSkylarkValue(p proc.PetsProc) skylark.Value {
 	host := net.JoinHostPort(p.Hostname, fmt.Sprintf("%d", p.Port))
 	d.Set(skylark.String("host"), skylark.String(host))
 	// }
+=======
+	if p.Hostname != "" {
+		d.Set(skylark.String("hostname"), skylark.String(p.Hostname))
+	}
+	if p.Port != 0 {
+		d.Set(skylark.String("port"), skylark.MakeInt(p.Port))
+	}
+	if p.Hostname != "" && p.Port != 0 {
+		d.Set(skylark.String("host"), skylark.String(p.Host()))
+	}
+>>>>>>> bf086a80c381cdca088a7b157093d9f4ca705af9
 	return d
 }
 
