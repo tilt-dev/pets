@@ -365,7 +365,7 @@ func (p *Petsitter) service(t *skylark.Thread, fn *skylark.Builtin, args skylark
 		return nil, err
 	}
 
-	fmt.Fprintf(p.Stderr, "The service %s is now running. \n", key)
+	fmt.Fprintf(p.Stderr, "The service %s is now running on port %d → http://%s:%d\n", key, port, host, port)
 
 	return petsProcToSkylarkValue(pr), nil
 }
