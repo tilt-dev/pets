@@ -55,6 +55,9 @@ func Execute() error {
 
 	RootCmd.AddCommand(analyticsCmd)
 
+	// NOTE(nick): uncomment this code to generate markdown usage
+	//doc.GenMarkdownTree(RootCmd, "./docs")
+
 	return RootCmd.Execute()
 }
 

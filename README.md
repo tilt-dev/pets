@@ -25,7 +25,11 @@ go get -u github.com/windmilleng/pets
 
 ## Usage
 
-TODO(nicks): Write usage instructions
+To get started using pets, read the introductory blog post.
+
+For more detail on how to use the CLI, you can browse the [CLI documentation](docs/pets.md).
+
+For more detail on how to write a configuration file for your project, see the [config documentation](docs/config.md).
 
 ## Examples
 
