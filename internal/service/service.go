@@ -56,3 +56,7 @@ func (k Key) Validate() error {
 	}
 	return k.Tier.Validate()
 }
+
+func (k Key) String() string {
+	return fmt.Sprintf("%s-%s", k.Name, k.Tier)
+}
