@@ -306,7 +306,13 @@ def inner_pwd():
 	}
 
 	out := stdout.String()
-	expected := fmt.Sprintf("%s\n%s/inner\n", f.dir, f.dir)
+
+	dir, err := filepath.EvalSymlinks(f.dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := fmt.Sprintf("%s\n%s/inner\n", dir, dir)
 	if out != expected {
 		t.Errorf("Expected:\n%s\n\nActual:\n%s", expected, out)
 	}
