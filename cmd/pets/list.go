@@ -9,7 +9,8 @@ import (
 )
 
 var ListCmd = &cobra.Command{
-	Use: "list",
+	Use:   "list",
+	Short: "List all processes started by pets",
 	Run: func(cms *cobra.Command, args []string) {
 		procfs, err := proc.NewProcFS()
 		if err != nil {
