@@ -8,8 +8,21 @@ Process for Editing Tons of Services 🐈🐈🐈
 Kubernetes makes it easy to manage herds of cattle: lots of servers running in
 production.
 
-PETS makes it easy to manage herds of cats: lots of servers running on your
+`pets` makes it easy to manage herds of cats: lots of servers running on your
 machine that you want to keep a close eye on for local development.
+
+<img src="./docs/logo.png" width="400" height="435" title="pets logo">
+
+## The Big Idea
+
+`pets` is for the cloud-service developer who has multiple servers that they run
+for day-to-day feature work. Maybe the servers run as bare processes. Maybe they
+run in containers. Or in minikube. Or in a remote Kubernetes cluster.
+
+We should be able to express the constellation of servers independently of how
+we start them. A `Petsfile` is like a `Makefile` for expressing how servers
+start and fit together. This lets us switch back and forth quickly between
+servers running locally and servers running in the cloud.
 
 ## Installation
 
@@ -25,7 +38,7 @@ go get -u github.com/windmilleng/pets
 
 ## Usage
 
-To get started using pets, read the introductory blog post.
+To get started using pets, read [the introductory blog post](https://medium.com/p/5f4ecba11f7d).
 
 For more detail on how to use the CLI, you can browse the [CLI documentation](docs/pets.md).
 
