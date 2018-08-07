@@ -7,6 +7,8 @@ jobs:
     steps:
       - checkout
       - run: sudo apt install netcat-openbsd
+      # for testing load()
+      - run: go get github.com/windmilleng/blorg-frontend
       - run: make lint
       - run: make test
       
@@ -27,6 +29,8 @@ jobs:
           paths:
             - /usr/local/Homebrew
           key: v5_homebrew_cache
+      # for testing load()
+      - run: go get github.com/windmilleng/blorg-frontend
       - run: make test
 
 workflows:
