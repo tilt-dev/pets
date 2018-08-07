@@ -139,11 +139,11 @@ func TestStartLogsInService(t *testing.T) {
 	petsitter := f.petsitter
 	file := filepath.Join(f.dir, "Petsfile")
 
-	// nc -lk -p PORT
+	// nc -lk PORT
 	// is unix-speak for "Create the dumbest possible server that just listens on PORT"
 	ioutil.WriteFile(file, []byte(`
 def start_local():
-  return service(start("echo meow; nc -lk -p 28234"), "localhost", 28234)
+  return service(start("echo meow; nc -lk 28234"), "localhost", 28234)
 
 register("frontend", "local", start_local)`), os.FileMode(0777))
 	err := petsitter.ExecFile(file)
@@ -325,7 +325,7 @@ func TestRegister(t *testing.T) {
 	file := filepath.Join(f.dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`
 def start_local():
-  result = service(start("nc -lk -p 28234"), "localhost", 28234)
+  result = service(start("nc -lk 28234"), "localhost", 28234)
   print(result["host"])
   return result
 
@@ -359,7 +359,7 @@ func TestRegisterTwice(t *testing.T) {
 	file := filepath.Join(f.dir, "Petsfile")
 	ioutil.WriteFile(file, []byte(`
 def start_local():
-  return service(start("nc -l -p 8080"), "localhost", 8080)
+  return service(start("nc -lk 8080"), "localhost", 8080)
 
 register("blorg-frontend", "local", start_local)
 register("blorg-frontend", "local", start_local)
