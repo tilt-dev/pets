@@ -132,6 +132,13 @@ func (f ProcFS) RemoveDeadProcs() error {
 	})
 }
 
+// Remove all procs from the JSON file
+func (f ProcFS) RemoveAllProcs() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.procsToFS(nil)
+}
+
 // Kill all the procs in the JSON file with a sigkill
 // This is really only suitable for testing. 'pets down' uses a more graceful
 // sigint with output.

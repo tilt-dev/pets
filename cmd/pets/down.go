@@ -32,16 +32,22 @@ var DownCmd = &cobra.Command{
 		}
 
 		for _, p := range procs {
+			if p.ServiceName != "" {
+				fmt.Printf("Stopping %s\n", p.ServiceKey())
+			} else {
+				fmt.Printf("Stopping pid %d\n", p.Pid)
+			}
+
 			// TODO: Decide what to do in edge cases, when killing pets doesn't work
+			// for now, ignore any errors.
 
 			// Pets starts all processes with a process group. -p.Pid is a posix trick
 			// to kill all processes in the group. This is helpful for things like 'go run'
 			// that spawn subprocesses, so that the subprocesses get killed too.
 			pgid := -p.Pid
-			err := syscall.Kill(pgid, syscall.SIGINT)
-			if err != nil {
-				fatal(err)
-			}
+			syscall.Kill(pgid, syscall.SIGINT)
 		}
+
+		procfs.RemoveAllProcs()
 	},
 }
