@@ -52,8 +52,6 @@ func WaitForTCP(process proc.PetsProc, interval time.Duration) error {
 				continue
 			}
 
-			// TODO(nick): We need to propagate this in a way so that the user
-			// gets access to the stdout/stderr of the failed process
 			return fmt.Errorf("Process died without opening a network connection")
 		}
 

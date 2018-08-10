@@ -393,7 +393,10 @@ register("blorg-frontend", "local", start_local)
 	school := f.petsitter.School
 	key := service.NewKey("blorg-frontend", "local")
 	_, err = school.UpByKey(key)
-	if err == nil || !strings.Contains(err.Error(), "Process died without opening a network connection") {
+	if err == nil ||
+		!strings.Contains(err.Error(), "Process died without opening a network connection") ||
+		!strings.Contains(err.Error(), "blorg-frontend-local logs") ||
+		!strings.Contains(err.Error(), "meow") {
 		t.Errorf("Expected health check error. Actual: %v", err)
 	}
 }
