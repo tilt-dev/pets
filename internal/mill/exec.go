@@ -396,7 +396,13 @@ func (p *Petsitter) waitOnHealthCheck(t *skylark.Thread, pr proc.PetsProc) error
 	<-waitingCh
 
 	if err != nil {
-		return fmt.Errorf("Health check (%s, %s) failed: %v", key, pr.Host(), err)
+		logs := ""
+		contents, readErr := p.Procfs.ReadLogFile(key)
+		if readErr == nil && contents != "" {
+			logs = fmt.Sprintf("\n%s logs:\n%s", key, contents)
+		}
+
+		return fmt.Errorf("Health check (%s, %s) failed: %v%s", key, pr.Host(), err, logs)
 	}
 
 	return nil
